@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HP管理画面 | 消化器内科</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:#0c0c0c; --white:#fff;
+      --bg:#f5f5f5; --card:#fff;
+      --border:#e0e0e0; --muted:#666; --light:#aaa;
+      --danger:#cc3333; --success:#1a7a3a;
+      --font:'Noto Sans JP', sans-serif;
+    }
+    body { font-family:var(--font); background:var(--bg); color:var(--black); font-size:14px; line-height:1.6; }
+    input, textarea, select { font-family:var(--font); }
+
+    /* ===== TOP BAR ===== */
+    .topbar { position:sticky; top:0; z-index:100; background:var(--black); color:#fff; height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+    .topbar-title { font-size:14px; font-weight:700; }
+    .topbar-title span { font-size:11px; font-weight:400; color:rgba(255,255,255,0.45); margin-left:10px; }
+    .topbar-link { font-size:12px; color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.2); padding:5px 12px; text-decoration:none; transition:all .2s; }
+    .topbar-link:hover { color:#fff; border-color:rgba(255,255,255,0.6); }
+
+    /* ===== SAVE BAR ===== */
+    .savebar { position:sticky; top:52px; z-index:99; background:#fff; border-bottom:1px solid var(--border); padding:8px 20px; display:flex; align-items:center; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+    .btn { display:inline-flex; align-items:center; gap:5px; padding:8px 18px; font-size:13px; font-weight:600; border:1.5px solid transparent; cursor:pointer; font-family:var(--font); transition:all .2s; }
+    .btn-save { background:var(--black); color:#fff; border-color:var(--black); }
+    .btn-save:hover { background:#333; }
+    .btn-preview { background:#0057a8; color:#fff; border-color:#0057a8; }
+    .btn-preview:hover { background:#004689; }
+    .btn-export { background:#fff; color:var(--black); border-color:var(--black); }
+    .btn-export:hover { background:#f0f0f0; }
+    .btn-import { background:#fff; color:#1a7a3a; border-color:#1a7a3a; }
+    .btn-import:hover { background:#f0faf3; }
+    .btn-publish { background:#1a7a3a; color:#fff; border-color:#1a7a3a; }
+    .btn-publish:hover { background:#155f2e; }
+    .btn-publish:disabled { background:#aaa; border-color:#aaa; cursor:not-allowed; }
+
+    /* ===== GITHUB設定モーダル ===== */
+    .gh-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }
+    .gh-modal-bg.open { display:flex; }
+    .gh-modal { background:#fff; padding:28px; width:480px; max-width:92vw; }
+    .gh-modal h3 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .gh-modal p { font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.7; }
+    .gh-modal input { width:100%; border:1px solid var(--border); padding:9px 11px; font-size:13px; font-family:var(--font); margin-bottom:14px; }
+    .gh-modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+    .gh-modal-btns button { padding:8px 20px; font-size:13px; font-weight:600; border:1.5px solid; cursor:pointer; font-family:var(--font); }
+    .gh-btn-save { background:var(--black); color:#fff; border-color:var(--black); }
+    .gh-btn-cancel { background:#fff; color:var(--black); border-color:var(--border); }
+    .save-status { font-size:12px; color:var(--light); }
+    .save-status.ok { color:var(--success); font-weight:600; }
+
+    /* ===== TABS ===== */
+    .tabs { background:#fff; border-bottom:1px solid var(--border); padding:0 20px; display:flex; }
+    .tab-btn { padding:13px 18px; font-size:13px; font-weight:500; color:var(--muted); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; font-family:var(--font); white-space:nowrap; transition:all .2s; }
+    .tab-btn:hover { color:var(--black); }
+    .tab-btn.active { color:var(--black); border-bottom-color:var(--black); font-weight:700; }
+
+    /* ===== MAIN ===== */
+    .main { max-width:860px; margin:0 auto; padding:24px 20px 80px; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ===== SEC TITLE ===== */
+    .sec-title { font-size:15px; font-weight:700; padding-bottom:10px; border-bottom:2px solid var(--black); margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+    .sec-desc { font-size:12px; color:var(--muted); margin-bottom:16px; background:#fffbe6; border-left:3px solid #f0c040; padding:9px 13px; line-height:1.7; }
+    .sec-gap { margin-top:36px; }
+
+    /* ===== ADD BUTTON ===== */
+    .btn-add { background:#fff; color:var(--black); border:1.5px solid var(--border); padding:7px 16px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:all .2s; }
+    .btn-add:hover { border-color:var(--black); }
+
+    /* ===== LIST ITEM (共通) ===== */
+    .list-item { border:1px solid var(--border); background:#fff; margin-bottom:6px; }
+    .row-head { display:flex; align-items:center; gap:10px; padding:9px 12px; cursor:pointer; user-select:none; min-height:58px; }
+    .row-head:hover { background:#fafafa; }
+    .list-item.open > .row-head { background:#fafafa; }
+
+    /* サムネイル */
+    .row-thumb { width:44px; height:44px; flex-shrink:0; background:#f0f0f0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .row-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .row-thumb svg { width:24px; height:24px; color:#ccc; }
+
+    /* テキスト情報 */
+    .row-info { flex:1; min-width:0; }
+    .row-name { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .row-sub  { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* カード表示バッジ */
+    .badge { font-size:10px; padding:2px 7px; white-space:nowrap; flex-shrink:0; }
+    .badge-on  { background:var(--black); color:#fff; }
+    .badge-off { background:#f0f0f0;      color:var(--light); }
+
+    /* 展開矢印 */
+    .chevron { font-size:11px; color:var(--light); flex-shrink:0; transition:transform .2s; }
+    .list-item.open .chevron { transform:rotate(180deg); }
+
+    /* 削除ボタン */
+    .row-del { background:none; border:none; color:var(--danger); font-size:20px; cursor:pointer; padding:4px 8px; flex-shrink:0; line-height:1; font-family:var(--font); border-radius:2px; }
+    .row-del:hover { background:#fef2f2; }
+
+    /* 展開エリア */
+    .row-body { display:none; padding:16px; border-top:1px solid var(--border); background:#fafafa; }
+    .list-item.open .row-body { display:block; }
+
+    /* ===== FORM ===== */
+    .fg { display:flex; flex-direction:column; gap:4px; }
+    .fg label { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.05em; }
+    .fg input, .fg textarea, .fg select { border:1px solid var(--border); padding:8px 10px; font-size:13px; font-family:var(--font); background:#fff; }
+    .fg input:focus, .fg textarea:focus { outline:none; border-color:var(--black); }
+    .fg textarea { resize:vertical; min-height:68px; }
+    .form-grid { display:grid; gap:12px; margin-bottom:12px; }
+    .cols2 { grid-template-columns:1fr 1fr; }
+    .cols3 { grid-template-columns:120px 160px 1fr; }
+    @media(max-width:600px){ .cols2,.cols3{ grid-template-columns:1fr; } }
+
+    /* ===== PHOTO UPLOAD ===== */
+    .photo-row { display:flex; align-items:flex-start; gap:12px; }
+    .photo-preview-box { width:80px; height:80px; background:#f0f0f0; border:1px solid var(--border); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .photo-preview-box img { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo-preview-box svg { width:36px; height:36px; color:#ccc; }
+    .photo-actions { display:flex; flex-direction:column; gap:6px; }
+    .photo-actions label { display:inline-block; padding:6px 12px; font-size:12px; font-weight:600; background:var(--bg); border:1px solid var(--border); cursor:pointer; font-family:var(--font); }
+    .photo-actions label:hover { border-color:var(--black); }
+    .photo-actions input[type="file"] { display:none; }
+    .photo-actions .clr-photo { background:none; border:none; font-size:11px; color:var(--danger); cursor:pointer; text-align:left; padding:0; font-family:var(--font); }
+    .photo-actions .clr-photo:hover { text-decoration:underline; }
+
+    /* ===== CHECKBOX ===== */
+    .check-row { display:flex; align-items:center; gap:7px; margin-top:8px; }
+    .check-row input { width:15px; height:15px; cursor:pointer; accent-color:var(--black); }
+    .check-row label { font-size:12px; color:var(--muted); cursor:pointer; }
+
+    /* ===== CARD FORM (科長・連絡先) ===== */
+    .card-form { background:#fff; border:1px solid var(--border); padding:20px; margin-bottom:12px; }
+
+    /* ===== EMPTY ===== */
+    .empty-state { text-align:center; padding:32px; color:var(--light); font-size:13px; background:#fff; border:1px dashed var(--border); }
+
+    /* ===== NONREG TABLE ===== */
+    .nonreg-table { width:100%; border-collapse:collapse; background:#fff; }
+    .nonreg-table th { font-size:11px; font-weight:700; color:var(--muted); padding:9px 10px; text-align:left; border-bottom:2px solid var(--black); }
+    .nonreg-table td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .nonreg-table input { border:1px solid var(--border); padding:5px 7px; font-size:13px; width:100%; font-family:var(--font); }
+    .nonreg-table input:focus { outline:none; border-color:var(--black); }
+    .td-del { width:36px; text-align:center; }
+
+    /* ===== HERO PREVIEW ===== */
+    .hero-preview-box {
+      width:100%; aspect-ratio:16/6;
+      background:#1a2535; border:1px solid var(--border);
+      overflow:hidden; position:relative;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:12px;
+    }
+    .hero-preview-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+    .hero-preview-box svg { width:52px; height:52px; color:#445; }
+    .hero-preview-label {
+      position:absolute; bottom:0; left:0; right:0;
+      background:rgba(0,0,0,0.45); color:rgba(255,255,255,0.6);
+      font-size:11px; padding:6px 12px; letter-spacing:.04em;
+    }
+
+    /* ===== LOGIN OVERLAY ===== */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: linear-gradient(135deg, #001f4e 0%, #003478 50%, #004fa3 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      background: #fff; border-radius: 8px;
+      padding: 48px 44px 40px;
+      width: 100%; max-width: 380px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+      text-align: center;
+    }
+    .login-logo-univ { font-size: 11px; color: #888; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .login-logo-dept { font-size: 22px; font-weight: 700; color: #003478; margin-bottom: 4px; }
+    .login-logo-sub  { font-size: 11px; color: #aaa; margin-bottom: 32px; letter-spacing: 0.05em; }
+    .login-rule { width: 36px; height: 2px; background: #b8832a; margin: 0 auto 32px; }
+    .login-label { display: block; font-size: 11px; font-weight: 700; color: #666; letter-spacing: 0.06em; text-align: left; margin-bottom: 8px; }
+    .login-input {
+      width: 100%; padding: 11px 14px; font-size: 15px;
+      border: 1.5px solid #ddd; border-radius: 4px;
+      font-family: var(--font); outline: none; transition: border-color .2s;
+      margin-bottom: 8px;
+    }
+    .login-input:focus { border-color: #003478; }
+    .login-error { font-size: 12px; color: #c00; min-height: 18px; margin-bottom: 14px; text-align: left; }
+    .login-btn {
+      width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
+      background: #003478; color: #fff; border: none; border-radius: 4px;
+      cursor: pointer; font-family: var(--font); transition: background .2s;
+    }
+    .login-btn:hover { background: #004fa3; }
+    .login-hint { font-size: 11px; color: #bbb; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div id="login-overlay">
+  <div class="login-card">
+    <p class="login-logo-univ">金沢医科大学病院</p>
+    <p class="login-logo-dept">消化器内科</p>
+    <p class="login-logo-sub">ADMIN PANEL</p>
+    <div class="login-rule"></div>
+    <form onsubmit="doLogin(event)">
+      <label class="login-label" for="login-pw">パスワード</label>
+      <input class="login-input" type="password" id="login-pw" placeholder="パスワードを入力" autocomplete="current-password">
+      <p class="login-error" id="login-error"></p>
+      <button class="login-btn" type="submit">ログイン</button>
+    </form>
+    <p class="login-hint">初期パスワード: admin1234</p>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-title">⚙ HP管理画面 <span>金沢医科大学病院 消化器内科</span></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button onclick="checkSavedData()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);padding:5px 12px;font-size:11px;cursor:pointer;font-family:var(--font);">保存確認</button>
+    <button onclick="resetData()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);padding:5px 12px;font-size:11px;cursor:pointer;font-family:var(--font);">データリセット</button>
+    <button onclick="changePassword()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);padding:5px 12px;font-size:11px;cursor:pointer;font-family:var(--font);">🔑 PW変更</button>
+    <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,100,100,0.4);color:rgba(255,150,150,0.8);padding:5px 12px;font-size:11px;cursor:pointer;font-family:var(--font);">ログアウト</button>
+    <a class="topbar-link" id="hp-check-link" href="index.html" target="_blank">HPを確認 →</a>
+  </div>
+</header>
+
+<!-- SAVE BAR -->
+<div class="savebar">
+  <button class="btn btn-save" onclick="saveAll()">💾 保存する</button>
+  <button class="btn btn-preview" onclick="openHP()">🔄 HPを確認（キャッシュクリア）</button>
+  <button class="btn btn-export" onclick="exportDataJS()">📄 data.js を書き出す</button>
+  <button class="btn btn-import" onclick="importDataJS()">📂 data.js を読み込む</button>
+  <input type="file" id="import-file-input" accept=".js" style="display:none" onchange="handleImportFile(this)">
+  <button class="btn btn-publish" id="btn-publish" onclick="publishToGitHub()">🚀 全デバイスに公開する</button>
+  <span class="save-status" id="saveStatus"></span>
+</div>
+
+<!-- GitHub設定モーダル -->
+<div class="gh-modal-bg" id="gh-modal-bg">
+  <div class="gh-modal">
+    <h3>⚙️ GitHub連携設定</h3>
+    <p>「🚀 全デバイスに公開する」を使うには、GitHubのPersonal Access Tokenが必要です。<br><br>
+    以下で作成してください：<br>
+    <b>GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens</b><br><br>
+    リポジトリ「kanazawa-gastro-hp」の <b>Contents: Read & Write</b> 権限を付与してください。</p>
+    <label style="font-size:11px;font-weight:700;color:var(--muted);">GitHub Personal Access Token</label>
+    <input type="password" id="gh-pat-input" placeholder="github_pat_xxxxxxxxxxxx">
+    <div class="gh-modal-btns">
+      <button class="gh-btn-cancel" onclick="closeGHModal()">キャンセル</button>
+      <button class="gh-btn-save" onclick="saveGHToken()">保存して公開</button>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('hero',this)">🖼 トップ画像</button>
+  <button class="tab-btn" onclick="switchTab('design',this)">🎨 デザイン</button>
+  <button class="tab-btn" onclick="switchTab('news',this)">📢 ニュース</button>
+  <button class="tab-btn" onclick="switchTab('chief',this)">👨‍⚕️ 科長情報</button>
+  <button class="tab-btn" onclick="switchTab('staff',this)">👥 スタッフ</button>
+  <button class="tab-btn" onclick="switchTab('research',this)">🔬 研究・業績</button>
+  <button class="tab-btn" onclick="switchTab('education',this)">🎓 研修・採用</button>
+  <button class="tab-btn" onclick="switchTab('events',this)">📷 イベント</button>
+  <button class="tab-btn" onclick="switchTab('contact',this)">📍 連絡先</button>
+</div>
+
+<div class="main">
+
+  <!-- ===== ヒーロー ===== -->
+  <div class="tab-panel active" id="panel-hero">
+    <div class="sec-title">トップ画面（ヒーロー）</div>
+    <p class="sec-desc">💡 背景写真とキャッチコピーを設定できます。写真なしの場合はネイビーグラデーション背景が表示されます。写真は横長（16:9推奨）が最適です。</p>
+    <div class="card-form">
+
+      <div class="fg" style="margin-bottom:16px;">
+        <label>背景写真</label>
+        <div class="hero-preview-box" id="hero-preview-box">
+          <svg viewBox="0 0 60 60" fill="none"><rect x="4" y="12" width="52" height="38" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="29" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M4 22h6l4-6h32l4 6" stroke="currentColor" stroke-width="1.2"/></svg>
+          <img id="hero-preview-img" src="" alt="">
+          <span class="hero-preview-label" id="hero-preview-label" style="display:none">背景写真プレビュー</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <label style="display:inline-block;padding:7px 14px;font-size:12px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;font-family:var(--font);">
+            📷 写真を選ぶ
+            <input type="file" accept="image/*" style="display:none" onchange="uploadHeroPhoto(this)">
+          </label>
+          <button class="clr-photo" style="font-size:12px;" onclick="clearHeroPhoto()">✕ 写真を削除</button>
+        </div>
+        <input type="hidden" id="hero-photo-data">
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:10px;">写真の暗さ調整</div>
+        <p style="font-size:11px;color:var(--light);margin-bottom:12px;">左に動かすと明るく、右に動かすと暗くなります。テキストが読みやすい範囲で調整してください。</p>
+        <div class="fg">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <span style="font-size:11px;color:var(--muted);">明るい</span>
+            <input type="range" id="hero-overlay" min="0" max="80" step="5" value="45"
+              oninput="document.getElementById('hero-overlay-val').textContent=this.value+'%'"
+              style="flex:1;accent-color:var(--navy-mid);">
+            <span style="font-size:11px;color:var(--muted);">暗い</span>
+            <span id="hero-overlay-val" style="font-size:12px;font-weight:600;color:var(--black);min-width:36px;text-align:right;">45%</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px;">キャッチコピー</div>
+        <div class="form-grid cols2">
+          <div class="fg">
+            <label>1行目（白文字）</label>
+            <input type="text" id="hero-line1" placeholder="例: 診て。支えて。">
+          </div>
+          <div class="fg">
+            <label>2行目（金色・強調）</label>
+            <input type="text" id="hero-line2" placeholder="例: 未来につなぐ。">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== デザイン設定 ===== -->
+  <div class="tab-panel" id="panel-design">
+    <div class="sec-title">デザイン設定</div>
+    <p class="sec-desc">💡 サイト全体の色とセクション背景写真を変更できます。保存するとHPに即座に反映されます。</p>
+
+    <!-- カラーテーマ -->
+    <div class="card-form" style="margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:16px;">🎨 カラーテーマ</div>
+
+      <!-- ライブプレビュー -->
+      <div id="theme-preview" style="width:100%;height:56px;border-radius:6px;margin-bottom:20px;display:flex;align-items:center;padding:0 20px;gap:16px;transition:background .3s;overflow:hidden;position:relative;">
+        <div id="tp-bar" style="position:absolute;inset:0;background:var(--navy-mid);"></div>
+        <span style="position:relative;color:#fff;font-weight:700;font-size:14px;letter-spacing:.04em;">金沢医科大学病院</span>
+        <span id="tp-accent" style="position:relative;width:36px;height:4px;border-radius:2px;background:var(--gold);"></span>
+        <span style="position:relative;color:rgba(255,255,255,.55);font-size:12px;">消化器内科</span>
+        <span id="tp-btn" style="position:relative;margin-left:auto;padding:5px 14px;border-radius:3px;font-size:11px;font-weight:600;color:#fff;background:var(--gold);">お問い合わせ</span>
+      </div>
+
+      <div class="form-grid cols2">
+        <div class="fg">
+          <label>ヘッダー メインカラー</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="th-navy" value="#003478" oninput="syncColor('th-navy','th-navy-txt');previewTheme()" style="width:44px;height:34px;border:1.5px solid var(--border);cursor:pointer;padding:2px;">
+            <input type="text"  id="th-navy-txt" value="#003478" maxlength="7" oninput="syncColorTxt('th-navy-txt','th-navy');previewTheme()" style="flex:1;font-family:monospace;">
+          </div>
+        </div>
+        <div class="fg">
+          <label>ヘッダー ミッドカラー</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="th-navyMid" value="#004fa3" oninput="syncColor('th-navyMid','th-navyMid-txt');previewTheme()" style="width:44px;height:34px;border:1.5px solid var(--border);cursor:pointer;padding:2px;">
+            <input type="text"  id="th-navyMid-txt" value="#004fa3" maxlength="7" oninput="syncColorTxt('th-navyMid-txt','th-navyMid');previewTheme()" style="flex:1;font-family:monospace;">
+          </div>
+        </div>
+        <div class="fg">
+          <label>アクセントカラー（金色）</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="th-gold" value="#b8832a" oninput="syncColor('th-gold','th-gold-txt');previewTheme()" style="width:44px;height:34px;border:1.5px solid var(--border);cursor:pointer;padding:2px;">
+            <input type="text"  id="th-gold-txt" value="#b8832a" maxlength="7" oninput="syncColorTxt('th-gold-txt','th-gold');previewTheme()" style="flex:1;font-family:monospace;">
+          </div>
+        </div>
+        <div class="fg">
+          <label>アクセントカラー（明）</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="th-goldLight" value="#d4a84b" oninput="syncColor('th-goldLight','th-goldLight-txt');previewTheme()" style="width:44px;height:34px;border:1.5px solid var(--border);cursor:pointer;padding:2px;">
+            <input type="text"  id="th-goldLight-txt" value="#d4a84b" maxlength="7" oninput="syncColorTxt('th-goldLight-txt','th-goldLight');previewTheme()" style="flex:1;font-family:monospace;">
+          </div>
+        </div>
+      </div>
+      <button class="clr-photo" style="margin-top:14px;" onclick="resetThemeColors()">↩ デフォルトカラーに戻す</button>
+    </div>
+
+    <!-- セクション背景写真 -->
+    <div class="card-form">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:16px;">🖼 セクション背景写真</div>
+      <p style="font-size:11px;color:var(--light);margin-bottom:16px;">各セクションに淡い背景写真を設定できます。写真は半透明オーバーレイで自動的に薄く表示されます。</p>
+
+      <div class="form-grid cols2">
+        <div class="fg">
+          <label>教室紹介セクション 背景</label>
+          <div class="hero-preview-box" id="dp-about-prev" style="aspect-ratio:16/5;">
+            <svg viewBox="0 0 60 60" fill="none"><rect x="4" y="12" width="52" height="38" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="29" r="9" stroke="currentColor" stroke-width="1.5"/></svg>
+            <img id="dp-about-img" src="" alt="" style="display:none;">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label style="display:inline-block;padding:6px 12px;font-size:12px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;">
+              📂 写真を選ぶ<input type="file" accept="image/*" style="display:none;" onchange="uploadSecPhoto(this,'dp-about-prev','dp-about-img','th-photo-about')">
+            </label>
+            <button class="clr-photo" style="font-size:12px;" onclick="clearSecPhoto('dp-about-prev','dp-about-img','th-photo-about')">✕ 削除</button>
+          </div>
+          <input type="hidden" id="th-photo-about">
+        </div>
+        <div class="fg">
+          <label>教育・研修セクション 背景</label>
+          <div class="hero-preview-box" id="dp-edu-prev" style="aspect-ratio:16/5;">
+            <svg viewBox="0 0 60 60" fill="none"><rect x="4" y="12" width="52" height="38" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="29" r="9" stroke="currentColor" stroke-width="1.5"/></svg>
+            <img id="dp-edu-img" src="" alt="" style="display:none;">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label style="display:inline-block;padding:6px 12px;font-size:12px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;">
+              📂 写真を選ぶ<input type="file" accept="image/*" style="display:none;" onchange="uploadSecPhoto(this,'dp-edu-prev','dp-edu-img','th-photo-edu')">
+            </label>
+            <button class="clr-photo" style="font-size:12px;" onclick="clearSecPhoto('dp-edu-prev','dp-edu-img','th-photo-edu')">✕ 削除</button>
+          </div>
+          <input type="hidden" id="th-photo-edu">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ニュース ===== -->
+  <div class="tab-panel" id="panel-news">
+    <div class="sec-title">
+      ニュース一覧
+      <button class="btn-add" onclick="addNews()">＋ ニュースを追加</button>
+    </div>
+    <p class="sec-desc">💡 行をクリックすると編集できます。右端の「×」で削除。新しいニュースは先頭に追加されます。</p>
+    <div id="news-list"></div>
+  </div>
+
+  <!-- ===== 科長情報 ===== -->
+  <div class="tab-panel" id="panel-chief">
+    <div class="sec-title">科長情報</div>
+    <p class="sec-desc">💡 科長が交代した際に編集してください。写真は「写真を選ぶ」から画像ファイルを選択できます。</p>
+    <div class="card-form">
+      <div class="form-grid cols2" style="margin-bottom:14px;">
+        <div class="fg"><label>氏名</label><input type="text" id="chief-name" placeholder="例: 水腰 英四郎"></div>
+        <div class="fg"><label>役職</label><input type="text" id="chief-title" placeholder="例: 消化器内科 教授・科長"></div>
+      </div>
+      <div class="fg" style="margin-bottom:14px;">
+        <label>写真</label>
+        <div class="photo-row">
+          <div class="photo-preview-box" id="chief-photo-box">
+            <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="22" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M8 54c0-12.15 9.85-22 22-22s22 9.85 22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="photo-actions">
+            <label>写真を選ぶ<input type="file" accept="image/*" onchange="uploadChiefPhoto(this)"></label>
+            <button class="clr-photo" onclick="clearChiefPhoto()">✕ 写真を削除</button>
+          </div>
+        </div>
+        <input type="hidden" id="chief-photo-data">
+      </div>
+      <div class="fg"><label>ご挨拶文（段落ごとに入力）</label></div>
+      <div id="chief-greeting-list"></div>
+      <button class="btn-add" style="margin-top:8px;" onclick="addGreetingPara()">＋ 段落を追加</button>
+    </div>
+  </div>
+
+  <!-- ===== スタッフ ===== -->
+  <div class="tab-panel" id="panel-staff">
+    <div class="sec-title">
+      常勤・併任スタッフ
+      <button class="btn-add" onclick="addStaff()">＋ スタッフを追加</button>
+    </div>
+    <p class="sec-desc">💡 行をクリックすると名前・役職・専門・写真を編集できます。「×」でスタッフを削除。「HPにカード表示」にチェックすると写真カードとして掲載されます。</p>
+    <div id="staff-list"></div>
+
+    <div class="sec-title sec-gap">
+      非常勤・名誉教授
+      <button class="btn-add" onclick="addNonreg()">＋ 追加</button>
+    </div>
+    <p class="sec-desc">💡 「×」で削除、行を直接クリックして編集できます。</p>
+    <div id="nonreg-list"></div>
+  </div>
+
+  <!-- ===== イベント ===== -->
+  <div class="tab-panel" id="panel-events">
+    <div class="sec-title">
+      医局イベント・写真ギャラリー
+      <button class="btn-add" onclick="addEvent()">＋ イベントを追加</button>
+    </div>
+    <p class="sec-desc">💡 行をクリックすると編集・写真の追加ができます。一番上のイベントがHPでメイン（大きく）表示されます。「×」で削除。</p>
+    <div id="events-list"></div>
+  </div>
+
+  <!-- ===== 研究・業績 ===== -->
+  <div class="tab-panel" id="panel-research">
+
+    <div class="sec-title">
+      研究テーマ
+      <button class="btn-add" onclick="addResearch()">＋ テーマを追加</button>
+    </div>
+    <p class="sec-desc">💡 行をクリックして編集。順番が上のものがHP上で01・02…と表示されます。「×」で削除。</p>
+    <div id="research-list"></div>
+
+    <div class="sec-title sec-gap">
+      業績・論文
+      <button class="btn-add" onclick="addPublication()">＋ 論文を追加</button>
+    </div>
+    <p class="sec-desc">💡 新しい論文は先頭に追加されます。行をクリックして編集できます。「×」で削除。</p>
+    <div id="pub-list-admin"></div>
+
+  </div>
+
+  <!-- ===== 研修・採用 ===== -->
+  <div class="tab-panel" id="panel-education">
+
+    <div class="sec-title">
+      研修プログラム（ステップ）
+      <button class="btn-add" onclick="addTraining()">＋ ステップを追加</button>
+    </div>
+    <p class="sec-desc">💡 上から順に「1年目→2〜3年目→4年目〜」のように表示されます。行をクリックして編集。</p>
+    <div id="training-list"></div>
+
+    <div class="sec-title sec-gap">
+      先輩医師の声
+      <button class="btn-add" onclick="addVoice()">＋ 追加</button>
+    </div>
+    <p class="sec-desc">💡 先輩コメントを追加・編集できます。名前・役職・コメント文を編集してください。</p>
+    <div id="voices-list-admin"></div>
+
+  </div>
+
+  <!-- ===== 連絡先 ===== -->
+  <div class="tab-panel" id="panel-contact">
+    <div class="sec-title">連絡先・診療時間</div>
+    <p class="sec-desc">💡 電話番号や住所が変わった場合に編集してください。保存するとHPに自動反映されます。</p>
+    <div class="card-form">
+      <div class="form-grid cols2" style="margin-bottom:14px;">
+        <div class="fg" style="grid-column:span 2;"><label>診療科名</label><input type="text" id="ct-dept"></div>
+        <div class="fg" style="grid-column:span 2;"><label>住所</label><input type="text" id="ct-address"></div>
+        <div class="fg"><label>電話番号（代表）</label><input type="text" id="ct-tel"></div>
+        <div class="fg"><label>外来受付内線（不要なら空欄）</label><input type="text" id="ct-ext"></div>
+      </div>
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;">📧 お問い合わせフォーム 送信先</div>
+        <p style="font-size:11px;color:var(--light);margin-bottom:12px;">
+          フォームに入力された内容の受け取り先メールアドレスを設定します。<br>
+          <b>初回のみ：</b>設定後に最初の送信が行われると、確認メールが届きます。メール内のURLをクリックして承認してください。
+        </p>
+        <div class="fg">
+          <label>受け取り先メールアドレス</label>
+          <input type="email" id="ct-formemail" placeholder="例: gastro@kanazawa-med.ac.jp">
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;">Google マップ</div>
+        <p style="font-size:11px;color:var(--light);margin-bottom:12px;">
+          空欄のままでも住所から自動で地図が表示されます。<br>
+          より正確な位置にしたい場合：<a href="https://maps.google.com" target="_blank" style="color:var(--navy-mid);">Google マップ</a>で病院を検索 → 「共有」→「地図を埋め込む」→ <code style="font-size:10px;background:#f0f0f0;padding:1px 4px;">src="..."</code> のURL部分をコピーして貼り付け
+        </p>
+        <div class="fg">
+          <label>埋め込みURL（任意）</label>
+          <input type="url" id="ct-mapurl" placeholder="https://www.google.com/maps/embed?pb=...（空欄で住所から自動生成）">
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px;">診療受付時間</div>
+        <div class="form-grid cols2">
+          <div class="fg"><label>初診受付</label><input type="text" id="ct-shinshin"></div>
+          <div class="fg"><label>再診受付</label><input type="text" id="ct-saishin"></div>
+          <div class="fg" style="grid-column:span 2;"><label>休診日</label><input type="text" id="ct-kyushin"></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;">SNS リンク</div>
+        <p style="font-size:11px;color:var(--light);margin-bottom:12px;">URLを入力するとフッターにアイコンが表示されます。不要な場合は空欄のままでOK。</p>
+        <div class="form-grid cols2">
+          <div class="fg" style="grid-column:span 2;">
+            <label>X（Twitter）URL</label>
+            <input type="url" id="ct-sns-x" placeholder="https://x.com/yourhandle">
+          </div>
+          <div class="fg" style="grid-column:span 2;">
+            <label>Instagram URL</label>
+            <input type="url" id="ct-sns-instagram" placeholder="https://www.instagram.com/yourhandle">
+          </div>
+          <div class="fg" style="grid-column:span 2;">
+            <label>Facebook URL</label>
+            <input type="url" id="ct-sns-facebook" placeholder="https://www.facebook.com/yourpage">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script src="data.js"></script>
+<script>
+/* ================================================================
+   認証 (パスワードロック)
+   ================================================================ */
+const DEFAULT_PASSWORD = 'admin1234';
+
+function _getPassword() {
+  return localStorage.getItem('admin_password') || DEFAULT_PASSWORD;
+}
+
+// ページ読み込み時: セッション認証済みならオーバーレイを非表示
+(function() {
+  if (sessionStorage.getItem('admin_auth') === 'ok') {
+    const ov = document.getElementById('login-overlay');
+    if (ov) ov.style.display = 'none';
+  } else {
+    // オーバーレイ表示中はパスワード入力にフォーカス
+    window.addEventListener('DOMContentLoaded', () => {
+      const inp = document.getElementById('login-pw');
+      if (inp) inp.focus();
+    });
+  }
+}());
+
+function doLogin(e) {
+  e.preventDefault();
+  const inp = document.getElementById('login-pw');
+  const err = document.getElementById('login-error');
+  if (inp.value === _getPassword()) {
+    sessionStorage.setItem('admin_auth', 'ok');
+    document.getElementById('login-overlay').style.display = 'none';
+    inp.value = '';
+  } else {
+    err.textContent = 'パスワードが違います。もう一度入力してください。';
+    inp.value = '';
+    inp.focus();
+    // 3回連続失敗でロックはしない（シンプル実装）
+  }
+}
+
+function doLogout() {
+  if (!confirm('ログアウトしますか？')) return;
+  sessionStorage.removeItem('admin_auth');
+  location.reload();
+}
+
+function changePassword() {
+  const current = prompt('現在のパスワードを入力してください:');
+  if (current === null) return;
+  if (current !== _getPassword()) { alert('現在のパスワードが違います。'); return; }
+  const newPw = prompt('新しいパスワードを入力してください（8文字以上推奨）:');
+  if (!newPw || newPw.trim() === '') { alert('パスワードが空です。変更をキャンセルしました。'); return; }
+  const newPw2 = prompt('新しいパスワードをもう一度入力してください:');
+  if (newPw !== newPw2) { alert('パスワードが一致しません。変更をキャンセルしました。'); return; }
+  localStorage.setItem('admin_password', newPw);
+  alert('✅ パスワードを変更しました。\n次回ログインから新しいパスワードが有効になります。');
+}
+
+/* ================================================================
+   管理画面スクリプト
+   ================================================================ */
+
+// ----------------------------------------------------------------
+// ユーティリティ
+// ----------------------------------------------------------------
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleRow(el) {
+  el.closest('.list-item').classList.toggle('open');
+}
+
+function stopAndDelete(btn) {
+  event.stopPropagation();
+  if (confirm('削除しますか？')) btn.closest('.list-item').remove();
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ----------------------------------------------------------------
+// 写真アップロード共通（Canvas で圧縮）
+// ----------------------------------------------------------------
+
+/**
+ * 画像を Canvas でリサイズ・圧縮して base64 を返す
+ * @param {File}   file     - 入力ファイル
+ * @param {number} maxW     - 最大幅 px
+ * @param {number} maxH     - 最大高さ px
+ * @param {number} quality  - JPEG 品質 0〜1
+ * @param {function} cb     - cb(base64string, sizeKB)
+ */
+function compressImage(file, maxW, maxH, quality, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      const ratio = Math.min(maxW / w, maxH / h, 1);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', quality);
+      const sizeKB = Math.round(base64.length * 0.75 / 1024);
+      cb(base64, sizeKB);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// 後方互換用（圧縮なし）
+function readFile(file, cb) {
+  compressImage(file, 9999, 9999, 0.92, (src) => cb(src));
+}
+
+function setPhotoBox(boxEl, src) {
+  if (src) {
+    boxEl.innerHTML = `<img src="${src}" alt="">`;
+  } else {
+    boxEl.innerHTML = `<svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="22" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M8 54c0-12.15 9.85-22 22-22s22 9.85 22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  }
+}
+
+function setThumb(thumbEl, src) {
+  if (src) {
+    thumbEl.innerHTML = `<img src="${src}" alt="">`;
+  } else {
+    thumbEl.innerHTML = `<svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="22" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M8 54c0-12.15 9.85-22 22-22s22 9.85 22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  }
+}
+
+// ----------------------------------------------------------------
+// データ保存・エクスポート
+// ----------------------------------------------------------------
+
+function loadSaved() {
+  try { const s = localStorage.getItem('hp_data'); if (s) return JSON.parse(s); } catch(e) {}
+  return null;
+}
+
+// ================================================================
+// ヒーロー
+// ================================================================
+
+function renderHeroForm(d) {
+  document.getElementById('hero-line1').value = d.catchphraseLine1 || '診て。支えて。';
+  document.getElementById('hero-line2').value = d.catchphraseEm    || '未来につなぐ。';
+  document.getElementById('hero-photo-data').value = d.photo || '';
+  setHeroPreview(d.photo || '');
+  const op = d.overlayOpacity !== undefined ? Math.round(parseFloat(d.overlayOpacity) * 100) : 45;
+  document.getElementById('hero-overlay').value = op;
+  document.getElementById('hero-overlay-val').textContent = op + '%';
+}
+
+function setHeroPreview(src) {
+  const box   = document.getElementById('hero-preview-box');
+  const img   = document.getElementById('hero-preview-img');
+  const lbl   = document.getElementById('hero-preview-label');
+  const icon  = box.querySelector('svg');
+  if (src) {
+    img.src = src;
+    img.style.display = 'block';
+    if (icon) icon.style.display = 'none';
+    if (lbl)  lbl.style.display = 'block';
+    box.style.background = '#001428';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    if (icon) icon.style.display = '';
+    if (lbl)  lbl.style.display = 'none';
+    box.style.background = '';
+  }
+}
+
+function uploadHeroPhoto(input) {
+  if (!input.files[0]) return;
+  compressImage(input.files[0], 1400, 800, 0.82, (src, kb) => {
+    document.getElementById('hero-photo-data').value = src;
+    setHeroPreview(src);
+    const lbl = document.getElementById('hero-preview-label');
+    if (lbl) { lbl.textContent = `背景写真プレビュー（圧縮後 ${kb} KB）`; lbl.style.display = 'block'; }
+  });
+}
+
+function clearHeroPhoto() {
+  document.getElementById('hero-photo-data').value = '';
+  setHeroPreview('');
+}
+
+function collectHero() {
+  return {
+    photo:            document.getElementById('hero-photo-data').value,
+    overlayOpacity:   parseFloat(document.getElementById('hero-overlay').value) / 100,
+    catchphraseLine1: document.getElementById('hero-line1').value,
+    catchphraseEm:    document.getElementById('hero-line2').value,
+  };
+}
+
+// ================================================================
+// デザイン設定
+// ================================================================
+
+function syncColor(colorId, textId) {
+  document.getElementById(textId).value = document.getElementById(colorId).value;
+}
+function syncColorTxt(textId, colorId) {
+  const v = document.getElementById(textId).value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById(colorId).value = v;
+}
+function previewTheme() {
+  const navy = document.getElementById('th-navy').value;
+  const mid  = document.getElementById('th-navyMid').value;
+  const gold = document.getElementById('th-gold').value;
+  document.getElementById('tp-bar').style.background    = 'linear-gradient(90deg,' + navy + ',' + mid + ')';
+  document.getElementById('tp-accent').style.background = gold;
+  document.getElementById('tp-btn').style.background    = gold;
+}
+function resetThemeColors() {
+  const d = { navy:'#003478', navyMid:'#004fa3', gold:'#b8832a', goldLight:'#d4a84b' };
+  Object.entries(d).forEach(function([k,v]){
+    document.getElementById('th-'+k).value       = v;
+    document.getElementById('th-'+k+'-txt').value = v;
+  });
+  previewTheme();
+}
+function renderThemeForm(d) {
+  if (!d) d = {};
+  function s(id, val, fb) { var el=document.getElementById(id); if(el) el.value = val||fb; }
+  s('th-navy',          d.navy,       '#003478');
+  s('th-navy-txt',      d.navy,       '#003478');
+  s('th-navyMid',       d.navyMid,    '#004fa3');
+  s('th-navyMid-txt',   d.navyMid,    '#004fa3');
+  s('th-gold',          d.gold,       '#b8832a');
+  s('th-gold-txt',      d.gold,       '#b8832a');
+  s('th-goldLight',     d.goldLight,  '#d4a84b');
+  s('th-goldLight-txt', d.goldLight,  '#d4a84b');
+  document.getElementById('th-photo-about').value = d.photoAbout     || '';
+  document.getElementById('th-photo-edu').value   = d.photoEducation || '';
+  setSecPhotoPreview('dp-about-prev', 'dp-about-img', d.photoAbout);
+  setSecPhotoPreview('dp-edu-prev',   'dp-edu-img',   d.photoEducation);
+  previewTheme();
+}
+function collectTheme() {
+  return {
+    navy:          document.getElementById('th-navy-txt').value.trim()      || '#003478',
+    navyMid:       document.getElementById('th-navyMid-txt').value.trim()   || '#004fa3',
+    gold:          document.getElementById('th-gold-txt').value.trim()      || '#b8832a',
+    goldLight:     document.getElementById('th-goldLight-txt').value.trim() || '#d4a84b',
+    photoAbout:    document.getElementById('th-photo-about').value,
+    photoEducation:document.getElementById('th-photo-edu').value,
+  };
+}
+function setSecPhotoPreview(boxId, imgId, src) {
+  var box = document.getElementById(boxId);
+  var img = document.getElementById(imgId);
+  if (!box || !img) return;
+  var icon = box.querySelector('svg');
+  if (src) {
+    img.src = src; img.style.display = 'block';
+    if (icon) icon.style.display = 'none';
+  } else {
+    img.src = ''; img.style.display = 'none';
+    if (icon) icon.style.display = '';
+  }
+}
+function uploadSecPhoto(input, boxId, imgId, hidId) {
+  if (!input.files[0]) return;
+  compressImage(input.files[0], 1600, 900, 0.80, function(src) {
+    document.getElementById(hidId).value = src;
+    setSecPhotoPreview(boxId, imgId, src);
+  });
+}
+function clearSecPhoto(boxId, imgId, hidId) {
+  document.getElementById(hidId).value = '';
+  setSecPhotoPreview(boxId, imgId, '');
+}
+
+function collectAll() {
+  return {
+    theme:           collectTheme(),
+    hero:            collectHero(),
+    news:            collectNews(),
+    chief:           collectChief(),
+    staff:           collectStaff(),
+    staffNonregular: collectNonreg(),
+    events:          collectEvents(),
+    contact:         collectContact(),
+    research:        collectResearch(),
+    publications:    collectPublications(),
+    training:        collectTraining(),
+    voices:          collectVoices(),
+    savedAt:         new Date().toISOString(),
+  };
+}
+
+function saveAll() {
+  const el = document.getElementById('saveStatus');
+  let data;
+
+  // Step1: データ収集
+  try {
+    data = collectAll();
+  } catch(e) {
+    console.error('データ収集エラー:', e);
+    alert('データ収集に失敗しました。\nエラー: ' + e.message);
+    return;
+  }
+
+  // Step2: データ容量チェック（参考表示）
+  const json = JSON.stringify(data);
+  const sizeKB = Math.round(json.length * 0.75 / 1024);
+  console.info('[Admin] 保存データ容量:', sizeKB, 'KB');
+
+  // Step3: localStorage に保存を試みる
+  let savedToLocal = false;
+  try {
+    localStorage.setItem('hp_data', json);
+    localStorage.setItem('hp_v', Date.now()); // キャッシュバスター更新
+    savedToLocal = true;
+  } catch(e) {
+    console.warn('localStorage 保存失敗 (' + e.name + '):', e.message);
+  }
+
+  if (savedToLocal) {
+    el.textContent = '✓ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '　' + sizeKB + ' KB）';
+    el.className = 'save-status ok';
+    setTimeout(() => { el.textContent = ''; el.className = 'save-status'; }, 5000);
+  } else {
+    // 容量超過 → data.js をダウンロードして上書きする方式に切り替え
+    alert('⚠️ 保存容量を超えました（' + sizeKB + ' KB）。\n\ndata.js ファイルをダウンロードします。\nダウンロードしたファイルをデモフォルダ内の data.js に上書きしてください。');
+    downloadDataJS(data);
+    el.textContent = '📄 data.js をダウンロードしました — フォルダ内に上書きしてください';
+    el.className = 'save-status ok';
+    setTimeout(() => { el.textContent = ''; el.className = 'save-status'; }, 15000);
+  }
+}
+
+// HP をキャッシュクリア済みで新しいタブに開く
+function openHP() {
+  // 未保存の変更がある場合のヒント
+  const status = document.getElementById('saveStatus');
+  if (!status || !status.textContent.includes('✓')) {
+    if (!confirm('まだ保存していない変更があるかもしれません。\n先に「💾 保存する」を押しましたか？\n\nそのままHPを開きますか？')) return;
+  }
+  window.open('./index.html', '_blank');
+}
+
+function checkSavedData() {
+  try {
+    const raw = localStorage.getItem('hp_data');
+    if (!raw) { alert('❌ localStorage にデータがありません。\n\n「💾 保存する」を押してから確認してください。'); return; }
+    const d = JSON.parse(raw);
+    const heroPhoto = d.hero?.photo || '';
+    const kb = heroPhoto ? Math.round(heroPhoto.length * 0.75 / 1024) : 0;
+    const msg = [
+      '✅ localStorage に保存済みデータがあります。',
+      '',
+      '【ヒーロー写真】 ' + (heroPhoto ? `あり（${kb} KB）` : 'なし'),
+      '【キャッチ1行目】 ' + (d.hero?.catchphraseLine1 || '（未設定）'),
+      '【キャッチ2行目】 ' + (d.hero?.catchphraseEm    || '（未設定）'),
+      '',
+      '保存日時: ' + (d.savedAt ? new Date(d.savedAt).toLocaleString('ja-JP') : '不明'),
+    ].join('\n');
+    alert(msg);
+  } catch(e) {
+    alert('エラー: ' + e.message);
+  }
+}
+
+function resetData() {
+  if (confirm('保存済みデータをすべて削除し、初期状態（data.js の内容）に戻しますか？\n\n※ この操作は取り消せません')) {
+    try { localStorage.removeItem('hp_data'); } catch(e) {}
+    location.reload();
+  }
+}
+
+function generateDataJS(data) {
+  const q = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');
+  let js = `/* 管理画面から生成: ${new Date().toLocaleString('ja-JP')} */\n\n`;
+  const th = data.theme || {};
+  js += `const THEME = {\n  navy:"${q(th.navy||'#003478')}", navyMid:"${q(th.navyMid||'#004fa3')}", gold:"${q(th.gold||'#b8832a')}", goldLight:"${q(th.goldLight||'#d4a84b')}",\n  photoAbout:"${q(th.photoAbout)}", photoEducation:"${q(th.photoEducation)}",\n};\n\n`;
+  const h = data.hero || {};
+  js += `const HERO = {\n  photo:"${q(h.photo)}", catchphraseLine1:"${q(h.catchphraseLine1||'診て。支えて。')}", catchphraseEm:"${q(h.catchphraseEm||'未来につなぐ。')}",\n};\n\n`;
+  js += `const NEWS = [\n` + (data.news||[]).map(n => `  { date:"${q(n.date)}", text:"${q(n.text)}", url:"${q(n.url)}" },\n`).join('') + `];\n\n`;
+  const c = data.chief||{};
+  js += `const CHIEF = {\n  name:"${q(c.name)}", title:"${q(c.title)}", photo:"${q(c.photo)}",\n  greeting:[\n` + (c.greeting||[]).map(p=>`    "${q(p)}",\n`).join('') + `  ],\n};\n\n`;
+  js += `const STAFF = [\n` + (data.staff||[]).map(s=>`  { name:"${q(s.name)}", rank:"${q(s.rank)}", specialty:"${q(s.specialty)}", photo:"${q(s.photo)}", showCard:${s.showCard?'true':'false'} },\n`).join('') + `];\n\n`;
+  js += `const STAFF_NONREGULAR = [\n` + (data.staffNonregular||[]).map(s=>`  { name:"${q(s.name)}", rank:"${q(s.rank)}", specialty:"${q(s.specialty)}" },\n`).join('') + `];\n\n`;
+  js += `const EVENTS = [\n` + (data.events||[]).map(e=>`  { title:"${q(e.title)}", year:"${q(e.year)}", photo:"${q(e.photo)}" },\n`).join('') + `];\n\n`;
+  const ct = data.contact||{};
+  const cs = ct.social||{};
+  js += `const CONTACT = {\n  dept:"${q(ct.dept)}", address:"${q(ct.address)}", tel:"${q(ct.tel)}", ext:"${q(ct.ext)}",\n  formEmail:"${q(ct.formEmail)}", mapUrl:"${q(ct.mapUrl)}",\n  social:{ x:"${q(cs.x)}", instagram:"${q(cs.instagram)}", facebook:"${q(cs.facebook)}" },\n  reception:{ shinshin:"${q(ct.reception&&ct.reception.shinshin)}", saishin:"${q(ct.reception&&ct.reception.saishin)}", kyushin:"${q(ct.reception&&ct.reception.kyushin)}" },\n};\n\n`;
+  js += `const RESEARCH = [\n` + (data.research||[]).map(r=>`  { title:"${q(r.title)}", desc:"${q(r.desc)}" },\n`).join('') + `];\n\n`;
+  js += `const PUBLICATIONS = [\n` + (data.publications||[]).map(p=>`  { year:"${q(p.year)}", title:"${q(p.title)}", meta:"${q(p.meta)}" },\n`).join('') + `];\n\n`;
+  js += `const TRAINING = [\n` + (data.training||[]).map(t=>`  { tag:"${q(t.tag)}", heading:"${q(t.heading)}", desc:"${q(t.desc)}" },\n`).join('') + `];\n\n`;
+  js += `const VOICES = [\n` + (data.voices||[]).map(v=>`  { name:"${q(v.name)}", role:"${q(v.role)}", comment:"${q(v.comment)}" },\n`).join('') + `];\n`;
+  return js;
+}
+
+function downloadDataJS(data) {
+  const js = generateDataJS(data);
+  const blob = new Blob([js], { type:'text/javascript;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.js'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+const GITHUB_OWNER = 'minomori0603';
+const GITHUB_REPO  = 'kanazawa-gastro-hp';
+
+function openGHModal() {
+  const existing = localStorage.getItem('github_pat') || '';
+  document.getElementById('gh-pat-input').value = existing;
+  document.getElementById('gh-modal-bg').classList.add('open');
+}
+
+function closeGHModal() {
+  document.getElementById('gh-modal-bg').classList.remove('open');
+}
+
+function saveGHToken() {
+  const token = document.getElementById('gh-pat-input').value.trim();
+  if (!token) { alert('トークンを入力してください。'); return; }
+  localStorage.setItem('github_pat', token);
+  closeGHModal();
+  doPublish();
+}
+
+async function publishToGitHub() {
+  const token = localStorage.getItem('github_pat') || '';
+  if (!token) { openGHModal(); return; }
+  doPublish();
+}
+
+async function doPublish() {
+  const token = localStorage.getItem('github_pat') || '';
+  const btn = document.getElementById('btn-publish');
+  const el = document.getElementById('saveStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ 公開中...';
+  el.textContent = '⏳ データを準備中...';
+  el.className = 'save-status';
+  try {
+    const data = collectAll();
+    localStorage.setItem('hp_data', JSON.stringify(data));
+    localStorage.setItem('hp_v', Date.now());
+
+    const dataJs = generateDataJS(data);
+    const contentB64 = btoa(unescape(encodeURIComponent(dataJs)));
+
+    el.textContent = '⏳ GitHubの現在のファイルを確認中...';
+    const apiBase = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/data.js';
+    const headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' };
+
+    const getRes = await fetch(apiBase, { headers });
+    if (getRes.status === 401) {
+      localStorage.removeItem('github_pat');
+      alert('トークンが無効です。再設定してください。');
+      openGHModal();
+      return;
+    }
+    if (!getRes.ok) throw new Error('GitHub取得エラー: HTTP ' + getRes.status);
+    const getJson = await getRes.json();
+    const sha = getJson.sha;
+
+    el.textContent = '⏳ GitHubにアップロード中...';
+    const putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: '管理画面から更新 ' + new Date().toLocaleString('ja-JP'),
+        content: contentB64,
+        sha: sha
+      })
+    });
+
+    if (!putRes.ok) {
+      const errData = await putRes.json().catch(() => ({}));
+      throw new Error(errData.message || 'HTTP ' + putRes.status);
+    }
+
+    el.textContent = '✅ 公開しました！1〜2分後にHPへ反映されます';
+    el.className = 'save-status ok';
+    setTimeout(() => { el.textContent = ''; el.className = 'save-status'; }, 15000);
+  } catch(err) {
+    alert('❌ 公開に失敗しました。\n\nエラー: ' + err.message);
+    el.textContent = '';
+    el.className = 'save-status';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 全デバイスに公開する';
+  }
+}
+
+function exportDataJS() {
+  downloadDataJS(collectAll());
+}
+
+function importDataJS() {
+  document.getElementById('import-file-input').click();
+}
+
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (!confirm('📂 「' + file.name + '」をインポートします。\n現在のデータは上書きされます。\n\n続けますか？')) {
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const code = e.target.result;
+      const fn = new Function(
+        code +
+        '\nreturn { NEWS:typeof NEWS!=="undefined"?NEWS:[], THEME:typeof THEME!=="undefined"?THEME:{}, HERO:typeof HERO!=="undefined"?HERO:{}, CHIEF:typeof CHIEF!=="undefined"?CHIEF:{}, STAFF:typeof STAFF!=="undefined"?STAFF:[], STAFF_NONREGULAR:typeof STAFF_NONREGULAR!=="undefined"?STAFF_NONREGULAR:[], EVENTS:typeof EVENTS!=="undefined"?EVENTS:[], CONTACT:typeof CONTACT!=="undefined"?CONTACT:{}, RESEARCH:typeof RESEARCH!=="undefined"?RESEARCH:[], PUBLICATIONS:typeof PUBLICATIONS!=="undefined"?PUBLICATIONS:[], TRAINING:typeof TRAINING!=="undefined"?TRAINING:[], VOICES:typeof VOICES!=="undefined"?VOICES:[] };'
+      );
+      const v = fn();
+      const data = {
+        theme:           v.THEME,
+        hero:            v.HERO,
+        news:            v.NEWS,
+        chief:           v.CHIEF,
+        staff:           v.STAFF,
+        staffNonregular: v.STAFF_NONREGULAR,
+        events:          v.EVENTS,
+        contact:         v.CONTACT,
+        research:        v.RESEARCH,
+        publications:    v.PUBLICATIONS,
+        training:        v.TRAINING,
+        voices:          v.VOICES,
+        savedAt:         new Date().toISOString(),
+      };
+      localStorage.setItem('hp_data', JSON.stringify(data));
+      localStorage.setItem('hp_v', Date.now());
+      alert('✅ インポート完了しました。管理画面を再読み込みします。');
+      location.reload();
+    } catch(err) {
+      alert('❌ インポートに失敗しました。\ndata.js の形式を確認してください。\n\nエラー: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ================================================================
+// ニュース
+// ================================================================
+
+function buildNewsItem(item) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(item.text) || '（タイトル未入力）'}</div>
+        <div class="row-sub">${escHtml(item.date)}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols2" style="margin-bottom:10px;">
+        <div class="fg"><label>日付</label><input type="text" class="n-date" value="${escHtml(item.date)}" placeholder="2026.05.20"></div>
+        <div class="fg"><label>リンクURL（なければ #）</label><input type="text" class="n-url" value="${escHtml(item.url||'#')}"></div>
+      </div>
+      <div class="fg"><label>ニュース本文</label><input type="text" class="n-text" value="${escHtml(item.text)}" placeholder="例: 学会にて研究発表を行いました">
+      </div>
+    </div>`;
+  // 本文を編集したら行ヘッダも更新
+  li.querySelector('.n-text').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（タイトル未入力）';
+  });
+  li.querySelector('.n-date').addEventListener('input', function() {
+    li.querySelector('.row-sub').textContent = this.value;
+  });
+  return li;
+}
+
+function renderNews(items) {
+  const el = document.getElementById('news-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">ニュースがありません。「＋ ニュースを追加」から追加してください。</div>'; return; }
+  items.forEach(item => el.appendChild(buildNewsItem(item)));
+}
+
+function addNews() {
+  const el = document.getElementById('news-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildNewsItem({ date: todayStr(), text: '', url: '#' });
+  li.classList.add('open');
+  el.insertBefore(li, el.firstChild);
+  li.querySelector('.n-text').focus();
+}
+
+function collectNews() {
+  return Array.from(document.querySelectorAll('#news-list .list-item')).map(li => ({
+    date: li.querySelector('.n-date')?.value || '',
+    text: li.querySelector('.n-text')?.value || '',
+    url:  li.querySelector('.n-url')?.value  || '#',
+  }));
+}
+
+// ================================================================
+// 科長情報
+// ================================================================
+
+function renderChiefForm(d) {
+  document.getElementById('chief-name').value  = d.name  || '';
+  document.getElementById('chief-title').value = d.title || '';
+  document.getElementById('chief-photo-data').value = d.photo || '';
+  setPhotoBox(document.getElementById('chief-photo-box'), d.photo);
+  renderGreetingParas(d.greeting || ['']);
+}
+
+function uploadChiefPhoto(input) {
+  if (!input.files[0]) return;
+  compressImage(input.files[0], 400, 500, 0.85, src => {
+    document.getElementById('chief-photo-data').value = src;
+    setPhotoBox(document.getElementById('chief-photo-box'), src);
+  });
+}
+
+function clearChiefPhoto() {
+  document.getElementById('chief-photo-data').value = '';
+  setPhotoBox(document.getElementById('chief-photo-box'), '');
+}
+
+function renderGreetingParas(paras) {
+  const list = document.getElementById('chief-greeting-list');
+  list.innerHTML = '';
+  paras.forEach((text, i) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;';
+    el.innerHTML = `<div class="fg" style="flex:1;"><label>段落 ${i+1}</label><textarea class="g-para" rows="2">${escHtml(text)}</textarea></div><button class="row-del" style="margin-top:20px;font-size:16px;" onclick="this.parentElement.remove()" title="削除">×</button>`;
+    list.appendChild(el);
+  });
+}
+
+function addGreetingPara() {
+  const list = document.getElementById('chief-greeting-list');
+  const count = list.querySelectorAll('.g-para').length;
+  const el = document.createElement('div');
+  el.style.cssText = 'display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;';
+  el.innerHTML = `<div class="fg" style="flex:1;"><label>段落 ${count+1}</label><textarea class="g-para" rows="2"></textarea></div><button class="row-del" style="margin-top:20px;font-size:16px;" onclick="this.parentElement.remove()" title="削除">×</button>`;
+  list.appendChild(el);
+  el.querySelector('textarea').focus();
+}
+
+function collectChief() {
+  return {
+    name:     document.getElementById('chief-name').value,
+    title:    document.getElementById('chief-title').value,
+    photo:    document.getElementById('chief-photo-data').value,
+    greeting: Array.from(document.querySelectorAll('.g-para')).map(t => t.value).filter(Boolean),
+  };
+}
+
+// ================================================================
+// スタッフ（常勤）
+// ================================================================
+
+function buildStaffItem(s) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  const uid = 'sf_' + Math.random().toString(36).slice(2);
+  const photoId  = uid + '_prev';
+  const photoHid = uid + '_data';
+
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-thumb" id="${uid}_thumb">${s.photo ? `<img src="${s.photo}" alt="">` : `<svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="22" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M8 54c0-12.15 9.85-22 22-22s22 9.85 22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`}</div>
+      <div class="row-info">
+        <div class="row-name">${escHtml(s.name) || '（名前未入力）'}</div>
+        <div class="row-sub">${escHtml(s.rank)}${s.specialty ? '　' + escHtml(s.specialty) : ''}</div>
+      </div>
+      <span class="badge ${s.showCard ? 'badge-on' : 'badge-off'}" id="${uid}_badge">${s.showCard ? 'カード表示 ✓' : 'カード非表示'}</span>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols3" style="margin-bottom:12px;">
+        <div class="fg"><label>氏名</label><input type="text" class="sf-name" value="${escHtml(s.name)}" placeholder="氏名"></div>
+        <div class="fg"><label>役職</label><input type="text" class="sf-rank" value="${escHtml(s.rank)}" placeholder="教授・助教 など"></div>
+        <div class="fg"><label>専門分野</label><input type="text" class="sf-spec" value="${escHtml(s.specialty)}" placeholder="専門分野"></div>
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label>写真</label>
+        <div class="photo-row">
+          <div class="photo-preview-box" id="${photoId}">${s.photo ? `<img src="${s.photo}" alt="">` : `<svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="22" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M8 54c0-12.15 9.85-22 22-22s22 9.85 22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`}</div>
+          <div class="photo-actions">
+            <label>${s.photo ? '写真を差し替え' : '写真を選ぶ'}
+              <input type="file" accept="image/*" onchange="staffPhotoUpload(this,'${photoId}','${photoHid}','${uid}_thumb','${uid}_label')">
+            </label>
+            <button class="clr-photo" onclick="staffPhotoClear('${photoId}','${photoHid}','${uid}_thumb','${uid}_label')">✕ 写真を削除</button>
+          </div>
+        </div>
+        <input type="hidden" class="sf-photo" id="${photoHid}" value="${escHtml(s.photo)}">
+      </div>
+      <div class="check-row">
+        <input type="checkbox" class="sf-card" id="${uid}_chk" ${s.showCard ? 'checked' : ''} onchange="updateCardBadge(this,'${uid}_badge')">
+        <label for="${uid}_chk">HPにカード表示（教授・准教授・講師などにチェック推奨）</label>
+      </div>
+    </div>`;
+
+  // 氏名・役職変更 → ヘッダリアルタイム更新
+  li.querySelector('.sf-name').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（名前未入力）';
+  });
+  li.querySelector('.sf-rank').addEventListener('input', function() {
+    const sub = li.querySelector('.row-sub');
+    sub.textContent = this.value + (li.querySelector('.sf-spec').value ? '　' + li.querySelector('.sf-spec').value : '');
+  });
+  li.querySelector('.sf-spec').addEventListener('input', function() {
+    const sub = li.querySelector('.row-sub');
+    sub.textContent = (li.querySelector('.sf-rank').value || '') + (this.value ? '　' + this.value : '');
+  });
+  return li;
+}
+
+function staffPhotoUpload(input, prevId, hidId, thumbId, labelId) {
+  if (!input.files[0]) return;
+  compressImage(input.files[0], 400, 500, 0.85, src => {
+    document.getElementById(hidId).value = src;
+    setPhotoBox(document.getElementById(prevId), src);
+    setThumb(document.getElementById(thumbId), src);
+    const lbl = input.closest('label');
+    if (lbl) lbl.childNodes[0].textContent = '写真を差し替え';
+  });
+}
+
+function staffPhotoClear(prevId, hidId, thumbId) {
+  document.getElementById(hidId).value = '';
+  setPhotoBox(document.getElementById(prevId), '');
+  setThumb(document.getElementById(thumbId), '');
+  // ラベルを「写真を選ぶ」に戻す
+  const prev = document.getElementById(prevId);
+  const label = prev.closest('.row-body')?.querySelector('.photo-actions label');
+  if (label) label.childNodes[0].textContent = '写真を選ぶ';
+}
+
+function updateCardBadge(chk, badgeId) {
+  const badge = document.getElementById(badgeId);
+  badge.textContent = chk.checked ? 'カード表示 ✓' : 'カード非表示';
+  badge.className = 'badge ' + (chk.checked ? 'badge-on' : 'badge-off');
+}
+
+function renderStaff(items) {
+  const el = document.getElementById('staff-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">スタッフがいません。「＋ スタッフを追加」から追加してください。</div>'; return; }
+  items.forEach(s => el.appendChild(buildStaffItem(s)));
+}
+
+function addStaff() {
+  const el = document.getElementById('staff-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildStaffItem({ name:'', rank:'', specialty:'', photo:'', showCard:false });
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.sf-name').focus();
+}
+
+function collectStaff() {
+  return Array.from(document.querySelectorAll('#staff-list .list-item')).map(li => ({
+    name:      li.querySelector('.sf-name')?.value  || '',
+    rank:      li.querySelector('.sf-rank')?.value  || '',
+    specialty: li.querySelector('.sf-spec')?.value  || '',
+    photo:     li.querySelector('.sf-photo')?.value || '',
+    showCard:  li.querySelector('.sf-card')?.checked || false,
+  }));
+}
+
+// ================================================================
+// 非常勤・名誉教授
+// ================================================================
+
+function buildNonregItem(s) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(s.name) || '（名前未入力）'}</div>
+        <div class="row-sub">${escHtml(s.rank)}${s.specialty ? '　' + escHtml(s.specialty) : ''}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols3">
+        <div class="fg"><label>氏名</label><input type="text" class="nr-name" value="${escHtml(s.name)}" placeholder="氏名"></div>
+        <div class="fg"><label>役職</label><input type="text" class="nr-rank" value="${escHtml(s.rank)}" placeholder="名誉教授・非常勤医師 など"></div>
+        <div class="fg"><label>専門分野</label><input type="text" class="nr-spec" value="${escHtml(s.specialty)}" placeholder="専門分野"></div>
+      </div>
+    </div>`;
+  li.querySelector('.nr-name').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（名前未入力）';
+  });
+  li.querySelector('.nr-rank').addEventListener('input', function() {
+    li.querySelector('.row-sub').textContent = this.value + (li.querySelector('.nr-spec').value ? '　' + li.querySelector('.nr-spec').value : '');
+  });
+  return li;
+}
+
+function renderNonreg(items) {
+  const el = document.getElementById('nonreg-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">「＋ 追加」からスタッフを追加してください。</div>'; return; }
+  items.forEach(s => el.appendChild(buildNonregItem(s)));
+}
+
+function addNonreg() {
+  const el = document.getElementById('nonreg-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildNonregItem({ name:'', rank:'', specialty:'' });
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.nr-name').focus();
+}
+
+function collectNonreg() {
+  return Array.from(document.querySelectorAll('#nonreg-list .list-item')).map(li => ({
+    name:      li.querySelector('.nr-name')?.value || '',
+    rank:      li.querySelector('.nr-rank')?.value || '',
+    specialty: li.querySelector('.nr-spec')?.value || '',
+  }));
+}
+
+// ================================================================
+// イベント
+// ================================================================
+
+function buildEventItem(ev, idx) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  const uid    = 'ev_' + Math.random().toString(36).slice(2);
+  const prevId = uid + '_prev';
+  const hidId  = uid + '_data';
+  const thumbId = uid + '_thumb';
+  const isMain = (idx === 0);
+
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-thumb" id="${thumbId}">${ev.photo ? `<img src="${ev.photo}" alt="">` : `<svg viewBox="0 0 60 60" fill="none"><rect x="6" y="14" width="48" height="36" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="28" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 40 l14-10 10 8 8-6 16 8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`}</div>
+      <div class="row-info">
+        <div class="row-name">${escHtml(ev.title) || '（タイトル未入力）'}</div>
+        <div class="row-sub">${ev.year ? ev.year + '年' : ''}${isMain ? '　⭐ メイン表示' : ''}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols2" style="margin-bottom:12px;">
+        <div class="fg"><label>イベント名</label><input type="text" class="ev-title" value="${escHtml(ev.title)}" placeholder="例: 医局旅行"></div>
+        <div class="fg"><label>年度（省略可）</label><input type="text" class="ev-year" value="${escHtml(ev.year)}" placeholder="例: 2025"></div>
+      </div>
+      <div class="fg">
+        <label>写真</label>
+        <div class="photo-row">
+          <div class="photo-preview-box" id="${prevId}">${ev.photo ? `<img src="${ev.photo}" alt="">` : `<svg viewBox="0 0 60 60" fill="none"><rect x="6" y="14" width="48" height="36" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="28" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 40 l14-10 10 8 8-6 16 8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`}</div>
+          <div class="photo-actions">
+            <label>${ev.photo ? '写真を差し替え' : '写真を選ぶ'}
+              <input type="file" accept="image/*" onchange="eventPhotoUpload(this,'${prevId}','${hidId}','${thumbId}')">
+            </label>
+            <button class="clr-photo" onclick="eventPhotoClear('${prevId}','${hidId}','${thumbId}')">✕ 写真を削除</button>
+          </div>
+        </div>
+        <input type="hidden" class="ev-photo" id="${hidId}" value="${escHtml(ev.photo)}">
+      </div>
+    </div>`;
+
+  li.querySelector('.ev-title').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（タイトル未入力）';
+  });
+  li.querySelector('.ev-year').addEventListener('input', function() {
+    const sub = li.querySelector('.row-sub');
+    const main = sub.textContent.includes('⭐');
+    sub.textContent = (this.value ? this.value + '年' : '') + (main ? '　⭐ メイン表示' : '');
+  });
+  return li;
+}
+
+function eventPhotoUpload(input, prevId, hidId, thumbId) {
+  if (!input.files[0]) return;
+  compressImage(input.files[0], 800, 600, 0.82, src => {
+    document.getElementById(hidId).value = src;
+    setPhotoBox(document.getElementById(prevId), src);
+    setThumb(document.getElementById(thumbId), src);
+    const lbl = input.closest('label');
+    if (lbl) lbl.childNodes[0].textContent = '写真を差し替え';
+  });
+}
+
+function eventPhotoClear(prevId, hidId, thumbId) {
+  document.getElementById(hidId).value = '';
+  setPhotoBox(document.getElementById(prevId), '');
+  setThumb(document.getElementById(thumbId), '');
+  const prev = document.getElementById(prevId);
+  const label = prev.closest('.row-body')?.querySelector('.photo-actions label');
+  if (label) label.childNodes[0].textContent = '写真を選ぶ';
+}
+
+function renderEvents(items) {
+  const el = document.getElementById('events-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">イベントがありません。「＋ イベントを追加」から追加してください。</div>'; return; }
+  items.forEach((ev, i) => el.appendChild(buildEventItem(ev, i)));
+}
+
+function addEvent() {
+  const el = document.getElementById('events-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildEventItem({ title:'', year: new Date().getFullYear().toString(), photo:'' }, el.querySelectorAll('.list-item').length);
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.ev-title').focus();
+}
+
+function collectEvents() {
+  return Array.from(document.querySelectorAll('#events-list .list-item')).map(li => ({
+    title: li.querySelector('.ev-title')?.value || '',
+    year:  li.querySelector('.ev-year')?.value  || '',
+    photo: li.querySelector('.ev-photo')?.value || '',
+  }));
+}
+
+// ================================================================
+// 連絡先
+// ================================================================
+
+function renderContact(ct) {
+  document.getElementById('ct-dept').value     = ct.dept     || '';
+  document.getElementById('ct-address').value  = ct.address  || '';
+  document.getElementById('ct-tel').value      = ct.tel      || '';
+  document.getElementById('ct-ext').value      = ct.ext      || '';
+  document.getElementById('ct-shinshin').value = ct.reception?.shinshin || '';
+  document.getElementById('ct-saishin').value  = ct.reception?.saishin  || '';
+  document.getElementById('ct-kyushin').value  = ct.reception?.kyushin  || '';
+  document.getElementById('ct-formemail').value = ct.formEmail || '';
+  document.getElementById('ct-mapurl').value    = ct.mapUrl    || '';
+  const s = ct.social || {};
+  document.getElementById('ct-sns-x').value         = s.x         || '';
+  document.getElementById('ct-sns-instagram').value = s.instagram || '';
+  document.getElementById('ct-sns-facebook').value  = s.facebook  || '';
+}
+
+function collectContact() {
+  return {
+    dept:    document.getElementById('ct-dept').value,
+    address: document.getElementById('ct-address').value,
+    tel:     document.getElementById('ct-tel').value,
+    ext:     document.getElementById('ct-ext').value,
+    formEmail: document.getElementById('ct-formemail').value.trim(),
+    mapUrl:    document.getElementById('ct-mapurl').value.trim(),
+    reception: {
+      shinshin: document.getElementById('ct-shinshin').value,
+      saishin:  document.getElementById('ct-saishin').value,
+      kyushin:  document.getElementById('ct-kyushin').value,
+    },
+    social: {
+      x:         document.getElementById('ct-sns-x').value.trim(),
+      instagram: document.getElementById('ct-sns-instagram').value.trim(),
+      facebook:  document.getElementById('ct-sns-facebook').value.trim(),
+    },
+  };
+}
+
+// ================================================================
+// 研究テーマ
+// ================================================================
+
+function buildResearchItem(r) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(r.title) || '（テーマ未入力）'}</div>
+        <div class="row-sub">${escHtml((r.desc||'').slice(0,50))}${(r.desc||'').length > 50 ? '…' : ''}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="fg" style="margin-bottom:10px;">
+        <label>テーマ名</label>
+        <input type="text" class="rs-title" value="${escHtml(r.title)}" placeholder="例: 肝疾患研究">
+      </div>
+      <div class="fg">
+        <label>説明文</label>
+        <textarea class="rs-desc" rows="3" placeholder="研究内容の説明...">${escHtml(r.desc)}</textarea>
+      </div>
+    </div>`;
+  li.querySelector('.rs-title').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（テーマ未入力）';
+  });
+  li.querySelector('.rs-desc').addEventListener('input', function() {
+    const s = this.value;
+    li.querySelector('.row-sub').textContent = s.slice(0, 50) + (s.length > 50 ? '…' : '');
+  });
+  return li;
+}
+
+function renderResearchAdmin(items) {
+  const el = document.getElementById('research-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">研究テーマがありません。「＋ テーマを追加」から追加してください。</div>'; return; }
+  items.forEach(r => el.appendChild(buildResearchItem(r)));
+}
+
+function addResearch() {
+  const el = document.getElementById('research-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildResearchItem({ title: '', desc: '' });
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.rs-title').focus();
+}
+
+function collectResearch() {
+  return Array.from(document.querySelectorAll('#research-list .list-item')).map(li => ({
+    title: li.querySelector('.rs-title')?.value || '',
+    desc:  li.querySelector('.rs-desc')?.value  || '',
+  }));
+}
+
+// ================================================================
+// 業績・論文
+// ================================================================
+
+function buildPublicationItem(p) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(p.title) || '（タイトル未入力）'}</div>
+        <div class="row-sub">${escHtml(p.year)}${p.meta ? '　' + escHtml(p.meta) : ''}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols2" style="margin-bottom:10px;">
+        <div class="fg"><label>発行年</label><input type="text" class="pb-year" value="${escHtml(p.year)}" placeholder="例: 2026"></div>
+        <div class="fg"><label>掲載誌・学会名</label><input type="text" class="pb-meta" value="${escHtml(p.meta)}" placeholder="例: 日本消化器内視鏡学会雑誌, 2026"></div>
+      </div>
+      <div class="fg">
+        <label>論文タイトル</label>
+        <textarea class="pb-title" rows="2" placeholder="論文タイトルを入力...">${escHtml(p.title)}</textarea>
+      </div>
+    </div>`;
+  li.querySelector('.pb-title').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（タイトル未入力）';
+  });
+  li.querySelector('.pb-year').addEventListener('input', function() {
+    const meta = li.querySelector('.pb-meta').value;
+    li.querySelector('.row-sub').textContent = this.value + (meta ? '　' + meta : '');
+  });
+  li.querySelector('.pb-meta').addEventListener('input', function() {
+    const year = li.querySelector('.pb-year').value;
+    li.querySelector('.row-sub').textContent = year + (this.value ? '　' + this.value : '');
+  });
+  return li;
+}
+
+function renderPublicationsAdmin(items) {
+  const el = document.getElementById('pub-list-admin');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">論文・業績がありません。「＋ 論文を追加」から追加してください。</div>'; return; }
+  items.forEach(p => el.appendChild(buildPublicationItem(p)));
+}
+
+function addPublication() {
+  const el = document.getElementById('pub-list-admin');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildPublicationItem({ year: new Date().getFullYear().toString(), title: '', meta: '' });
+  li.classList.add('open');
+  el.insertBefore(li, el.firstChild);
+  li.querySelector('.pb-title').focus();
+}
+
+function collectPublications() {
+  return Array.from(document.querySelectorAll('#pub-list-admin .list-item')).map(li => ({
+    year:  li.querySelector('.pb-year')?.value  || '',
+    title: li.querySelector('.pb-title')?.value || '',
+    meta:  li.querySelector('.pb-meta')?.value  || '',
+  }));
+}
+
+// ================================================================
+// 研修プログラム
+// ================================================================
+
+function buildTrainingItem(t) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(t.heading) || '（見出し未入力）'}</div>
+        <div class="row-sub">${escHtml(t.tag)}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols2" style="margin-bottom:10px;">
+        <div class="fg"><label>期間ラベル（タグ）</label><input type="text" class="tr-tag" value="${escHtml(t.tag)}" placeholder="例: 1年目"></div>
+        <div class="fg"><label>ステップ見出し</label><input type="text" class="tr-heading" value="${escHtml(t.heading)}" placeholder="例: 基礎研修"></div>
+      </div>
+      <div class="fg">
+        <label>説明文</label>
+        <textarea class="tr-desc" rows="3" placeholder="研修内容の説明...">${escHtml(t.desc)}</textarea>
+      </div>
+    </div>`;
+  li.querySelector('.tr-heading').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（見出し未入力）';
+  });
+  li.querySelector('.tr-tag').addEventListener('input', function() {
+    li.querySelector('.row-sub').textContent = this.value;
+  });
+  return li;
+}
+
+function renderTrainingAdmin(items) {
+  const el = document.getElementById('training-list');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">研修ステップがありません。「＋ ステップを追加」から追加してください。</div>'; return; }
+  items.forEach(t => el.appendChild(buildTrainingItem(t)));
+}
+
+function addTraining() {
+  const el = document.getElementById('training-list');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildTrainingItem({ tag: '', heading: '', desc: '' });
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.tr-tag').focus();
+}
+
+function collectTraining() {
+  return Array.from(document.querySelectorAll('#training-list .list-item')).map(li => ({
+    tag:     li.querySelector('.tr-tag')?.value     || '',
+    heading: li.querySelector('.tr-heading')?.value || '',
+    desc:    li.querySelector('.tr-desc')?.value    || '',
+  }));
+}
+
+// ================================================================
+// 先輩医師の声
+// ================================================================
+
+function buildVoiceItem(v) {
+  const li = document.createElement('div');
+  li.className = 'list-item';
+  li.innerHTML = `
+    <div class="row-head" onclick="toggleRow(this)">
+      <div class="row-info">
+        <div class="row-name">${escHtml(v.name) || '（名前未入力）'}</div>
+        <div class="row-sub">${escHtml(v.role)}</div>
+      </div>
+      <span class="chevron">▼</span>
+      <button class="row-del" onclick="stopAndDelete(this)" title="削除">×</button>
+    </div>
+    <div class="row-body">
+      <div class="form-grid cols2" style="margin-bottom:10px;">
+        <div class="fg"><label>名前</label><input type="text" class="vc-name" value="${escHtml(v.name)}" placeholder="例: ○○ ○○ 先生"></div>
+        <div class="fg"><label>役職・年次</label><input type="text" class="vc-role" value="${escHtml(v.role)}" placeholder="例: 入局 / 消化器内科専門医"></div>
+      </div>
+      <div class="fg">
+        <label>コメント</label>
+        <textarea class="vc-comment" rows="3" placeholder="先輩医師のコメントを入力...">${escHtml(v.comment)}</textarea>
+      </div>
+    </div>`;
+  li.querySelector('.vc-name').addEventListener('input', function() {
+    li.querySelector('.row-name').textContent = this.value || '（名前未入力）';
+  });
+  li.querySelector('.vc-role').addEventListener('input', function() {
+    li.querySelector('.row-sub').textContent = this.value;
+  });
+  return li;
+}
+
+function renderVoicesAdmin(items) {
+  const el = document.getElementById('voices-list-admin');
+  el.innerHTML = '';
+  if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">先輩の声がありません。「＋ 追加」から追加してください。</div>'; return; }
+  items.forEach(v => el.appendChild(buildVoiceItem(v)));
+}
+
+function addVoice() {
+  const el = document.getElementById('voices-list-admin');
+  const empty = el.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const li = buildVoiceItem({ name: '', role: '', comment: '' });
+  li.classList.add('open');
+  el.appendChild(li);
+  li.querySelector('.vc-name').focus();
+}
+
+function collectVoices() {
+  return Array.from(document.querySelectorAll('#voices-list-admin .list-item')).map(li => ({
+    name:    li.querySelector('.vc-name')?.value    || '',
+    role:    li.querySelector('.vc-role')?.value    || '',
+    comment: li.querySelector('.vc-comment')?.value || '',
+  }));
+}
+
+// ================================================================
+// 初期化
+// ================================================================
+
+window.addEventListener('DOMContentLoaded', () => {
+
+  // ---- origin チェック ----
+  const isFile = location.protocol === 'file:';
+  const localBase = 'http://localhost:3000';
+  const hpLink = document.getElementById('hp-check-link');
+
+  if (isFile) {
+    // file:// で開かれている → localhost へ誘導するバナーを表示
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fff3cd;border-bottom:2px solid #f0c040;padding:10px 20px;font-size:13px;line-height:1.6;';
+    banner.innerHTML = `⚠️ <strong>このページはファイルから直接開かれています。</strong>保存してもHPに反映されません。<br>
+      ブラウザのアドレスバーに <strong style="background:#fff;padding:2px 8px;border:1px solid #ccc;font-family:monospace;">http://localhost:3000/admin.html</strong> と入力して開いてください。&nbsp;
+      <a href="${localBase}/admin.html" style="color:#0066cc;font-weight:700;">今すぐ開く →</a>`;
+    document.body.insertBefore(banner, document.body.firstChild);
+    // HP確認リンクも localhost に変更
+    if (hpLink) hpLink.href = localBase + '/index.html';
+  } else {
+    // HTTP サーバー経由 → HP確認リンクを同じ origin に統一
+    const origin = location.origin;
+    if (hpLink) hpLink.href = origin + '/index.html';
+  }
+
+  const sv = loadSaved();
+
+  renderThemeForm((sv && sv.theme != null) ? sv.theme : (typeof THEME !== 'undefined' ? THEME : {}));
+  renderHeroForm((sv && sv.hero != null) ? sv.hero : (typeof HERO !== 'undefined' ? HERO : {}));
+  renderNews(sv?.news              || NEWS);
+  renderChiefForm(sv?.chief        || CHIEF);
+  renderStaff(sv?.staff            || STAFF);
+  renderNonreg(sv?.staffNonregular || STAFF_NONREGULAR);
+  renderEvents(sv?.events          || EVENTS);
+  renderContact(sv?.contact        || CONTACT);
+  renderResearchAdmin(sv?.research         || (typeof RESEARCH     !== 'undefined' ? RESEARCH     : []));
+  renderPublicationsAdmin(sv?.publications || (typeof PUBLICATIONS !== 'undefined' ? PUBLICATIONS : []));
+  renderTrainingAdmin(sv?.training         || (typeof TRAINING     !== 'undefined' ? TRAINING     : []));
+  renderVoicesAdmin(sv?.voices             || (typeof VOICES       !== 'undefined' ? VOICES       : []));
+
+  if (sv?.savedAt) {
+    const el = document.getElementById('saveStatus');
+    el.textContent = '最終保存: ' + new Date(sv.savedAt).toLocaleString('ja-JP');
+    el.className = 'save-status ok';
+  }
+});
+</script>
+</body>
+</html>
