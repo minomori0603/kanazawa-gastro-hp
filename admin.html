@@ -238,20 +238,20 @@
   <button class="btn btn-export" onclick="exportDataJS()">📄 data.js を書き出す</button>
   <button class="btn btn-import" onclick="importDataJS()">📂 data.js を読み込む</button>
   <input type="file" id="import-file-input" accept=".js" style="display:none" onchange="handleImportFile(this)">
-  <button class="btn btn-publish" id="btn-publish" onclick="publishToGitHub()">🚀 全デバイスに公開する</button>
+  <button class="btn btn-publish" id="btn-publish" onclick="publishToNetlify()">🚀 全デバイスに公開する</button>
   <span class="save-status" id="saveStatus"></span>
 </div>
 
-<!-- GitHub設定モーダル -->
+<!-- Netlify設定モーダル -->
 <div class="gh-modal-bg" id="gh-modal-bg">
   <div class="gh-modal">
-    <h3>⚙️ GitHub連携設定</h3>
-    <p>「🚀 全デバイスに公開する」を使うには、GitHubのPersonal Access Tokenが必要です。<br><br>
-    以下で作成してください：<br>
-    <b>GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens</b><br><br>
-    リポジトリ「kanazawa-gastro-hp」の <b>Contents: Read & Write</b> 権限を付与してください。</p>
-    <label style="font-size:11px;font-weight:700;color:var(--muted);">GitHub Personal Access Token</label>
-    <input type="password" id="gh-pat-input" placeholder="github_pat_xxxxxxxxxxxx">
+    <h3>⚙️ Netlify連携設定</h3>
+    <p>「🚀 全デバイスに公開する」を使うには、NetlifyのPersonal Access Tokenが必要です。<br><br>
+    以下のURLで作成してください：<br>
+    <b>Netlify → User settings → Applications → Personal access tokens → New access token</b><br><br>
+    または直接：<b>app.netlify.com/user/applications/personal</b></p>
+    <label style="font-size:11px;font-weight:700;color:var(--muted);">Netlify Personal Access Token</label>
+    <input type="password" id="gh-pat-input" placeholder="nfp_xxxxxxxxxxxx">
     <div class="gh-modal-btns">
       <button class="gh-btn-cancel" onclick="closeGHModal()">キャンセル</button>
       <button class="gh-btn-save" onclick="saveGHToken()">保存して公開</button>
@@ -1006,11 +1006,10 @@ function downloadDataJS(data) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.js'; a.click(); URL.revokeObjectURL(a.href);
 }
 
-const GITHUB_OWNER = 'minomori0603';
-const GITHUB_REPO  = 'kanazawa-gastro-hp';
+const NETLIFY_SITE = 'kanazawaikadaigaku-syoukakinaika';
 
 function openGHModal() {
-  const existing = localStorage.getItem('github_pat') || '';
+  const existing = localStorage.getItem('netlify_pat') || '';
   document.getElementById('gh-pat-input').value = existing;
   document.getElementById('gh-modal-bg').classList.add('open');
 }
@@ -1022,24 +1021,24 @@ function closeGHModal() {
 function saveGHToken() {
   const token = document.getElementById('gh-pat-input').value.trim();
   if (!token) { alert('トークンを入力してください。'); return; }
-  localStorage.setItem('github_pat', token);
+  localStorage.setItem('netlify_pat', token);
   closeGHModal();
   doPublish();
 }
 
-async function publishToGitHub() {
-  const token = localStorage.getItem('github_pat') || '';
+async function publishToNetlify() {
+  const token = localStorage.getItem('netlify_pat') || '';
   if (!token) { openGHModal(); return; }
   doPublish();
 }
 
 async function doPublish() {
-  const token = localStorage.getItem('github_pat') || '';
+  const token = localStorage.getItem('netlify_pat') || '';
   const btn = document.getElementById('btn-publish');
   const el = document.getElementById('saveStatus');
   btn.disabled = true;
   btn.textContent = '⏳ 公開中...';
-  el.textContent = '⏳ データを準備中...';
+  el.textContent = '⏳ ファイルを準備中...';
   el.className = 'save-status';
   try {
     const data = collectAll();
@@ -1047,37 +1046,38 @@ async function doPublish() {
     localStorage.setItem('hp_v', Date.now());
 
     const dataJs = generateDataJS(data);
-    const contentB64 = btoa(unescape(encodeURIComponent(dataJs)));
+    const [indexHtml, adminHtml, scriptJs, styleCSS] = await Promise.all([
+      fetch('./index.html?t=' + Date.now()).then(r => r.text()),
+      fetch('./admin.html?t=' + Date.now()).then(r => r.text()),
+      fetch('./script.js?t='  + Date.now()).then(r => r.text()),
+      fetch('./style.css?t='  + Date.now()).then(r => r.text()),
+    ]);
 
-    el.textContent = '⏳ GitHubの現在のファイルを確認中...';
-    const apiBase = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/data.js';
-    const headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' };
+    el.textContent = '⏳ ZIPを作成中...';
+    const zip = new JSZip();
+    zip.file('index.html', indexHtml);
+    zip.file('admin.html', adminHtml);
+    zip.file('script.js',  scriptJs);
+    zip.file('style.css',  styleCSS);
+    zip.file('data.js',    dataJs);
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 
-    const getRes = await fetch(apiBase, { headers });
-    if (getRes.status === 401) {
-      localStorage.removeItem('github_pat');
+    el.textContent = '⏳ Netlifyにアップロード中...';
+    const deployRes = await fetch('https://api.netlify.com/api/v1/sites/' + NETLIFY_SITE + '/deploys', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/zip' },
+      body: zipBlob
+    });
+
+    if (deployRes.status === 401) {
+      localStorage.removeItem('netlify_pat');
       alert('トークンが無効です。再設定してください。');
       openGHModal();
       return;
     }
-    if (!getRes.ok) throw new Error('GitHub取得エラー: HTTP ' + getRes.status);
-    const getJson = await getRes.json();
-    const sha = getJson.sha;
-
-    el.textContent = '⏳ GitHubにアップロード中...';
-    const putRes = await fetch(apiBase, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: '管理画面から更新 ' + new Date().toLocaleString('ja-JP'),
-        content: contentB64,
-        sha: sha
-      })
-    });
-
-    if (!putRes.ok) {
-      const errData = await putRes.json().catch(() => ({}));
-      throw new Error(errData.message || 'HTTP ' + putRes.status);
+    if (!deployRes.ok) {
+      const errData = await deployRes.json().catch(() => ({}));
+      throw new Error(errData.message || 'HTTP ' + deployRes.status);
     }
 
     el.textContent = '✅ 公開しました！1〜2分後にHPへ反映されます';
