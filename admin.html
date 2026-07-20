@@ -238,20 +238,20 @@
   <button class="btn btn-export" onclick="exportDataJS()">📄 data.js を書き出す</button>
   <button class="btn btn-import" onclick="importDataJS()">📂 data.js を読み込む</button>
   <input type="file" id="import-file-input" accept=".js" style="display:none" onchange="handleImportFile(this)">
-  <button class="btn btn-publish" id="btn-publish" onclick="publishToNetlify()">🚀 全デバイスに公開する</button>
+  <button class="btn btn-publish" id="btn-publish" onclick="publishToGitHub()">🚀 全デバイスに公開する</button>
   <span class="save-status" id="saveStatus"></span>
 </div>
 
-<!-- Netlify設定モーダル -->
+<!-- GitHub設定モーダル -->
 <div class="gh-modal-bg" id="gh-modal-bg">
   <div class="gh-modal">
-    <h3>⚙️ Netlify連携設定</h3>
-    <p>「🚀 全デバイスに公開する」を使うには、NetlifyのPersonal Access Tokenが必要です。<br><br>
-    以下のURLで作成してください：<br>
-    <b>Netlify → User settings → Applications → Personal access tokens → New access token</b><br><br>
-    または直接：<b>app.netlify.com/user/applications/personal</b></p>
-    <label style="font-size:11px;font-weight:700;color:var(--muted);">Netlify Personal Access Token</label>
-    <input type="password" id="gh-pat-input" placeholder="nfp_xxxxxxxxxxxx">
+    <h3>⚙️ GitHub連携設定</h3>
+    <p>「🚀 全デバイスに公開する」を使うには、GitHubのPersonal Access Tokenが必要です。<br><br>
+    以下で作成してください：<br>
+    <b>GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens</b><br><br>
+    リポジトリ「kanazawa-gastro-hp」の <b>Contents: Read & Write</b> 権限を付与してください。</p>
+    <label style="font-size:11px;font-weight:700;color:var(--muted);">GitHub Personal Access Token</label>
+    <input type="password" id="gh-pat-input" placeholder="github_pat_xxxxxxxxxxxx">
     <div class="gh-modal-btns">
       <button class="gh-btn-cancel" onclick="closeGHModal()">キャンセル</button>
       <button class="gh-btn-save" onclick="saveGHToken()">保存して公開</button>
@@ -1006,10 +1006,11 @@ function downloadDataJS(data) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.js'; a.click(); URL.revokeObjectURL(a.href);
 }
 
-const NETLIFY_SITE = 'kanazawaikadaigaku-syoukakinaika';
+const GITHUB_OWNER = 'minomori0603';
+const GITHUB_REPO  = 'kanazawa-gastro-hp';
 
 function openGHModal() {
-  const existing = localStorage.getItem('netlify_pat') || '';
+  const existing = localStorage.getItem('github_pat') || '';
   document.getElementById('gh-pat-input').value = existing;
   document.getElementById('gh-modal-bg').classList.add('open');
 }
@@ -1021,24 +1022,24 @@ function closeGHModal() {
 function saveGHToken() {
   const token = document.getElementById('gh-pat-input').value.trim();
   if (!token) { alert('トークンを入力してください。'); return; }
-  localStorage.setItem('netlify_pat', token);
+  localStorage.setItem('github_pat', token);
   closeGHModal();
   doPublish();
 }
 
-async function publishToNetlify() {
-  const token = localStorage.getItem('netlify_pat') || '';
+async function publishToGitHub() {
+  const token = localStorage.getItem('github_pat') || '';
   if (!token) { openGHModal(); return; }
   doPublish();
 }
 
 async function doPublish() {
-  const token = localStorage.getItem('netlify_pat') || '';
+  const token = localStorage.getItem('github_pat') || '';
   const btn = document.getElementById('btn-publish');
   const el = document.getElementById('saveStatus');
   btn.disabled = true;
   btn.textContent = '⏳ 公開中...';
-  el.textContent = '⏳ ファイルを準備中...';
+  el.textContent = '⏳ データを準備中...';
   el.className = 'save-status';
   try {
     const data = collectAll();
@@ -1046,38 +1047,42 @@ async function doPublish() {
     localStorage.setItem('hp_v', Date.now());
 
     const dataJs = generateDataJS(data);
-    const [indexHtml, adminHtml, scriptJs, styleCSS] = await Promise.all([
-      fetch('./index.html?t=' + Date.now()).then(r => r.text()),
-      fetch('./admin.html?t=' + Date.now()).then(r => r.text()),
-      fetch('./script.js?t='  + Date.now()).then(r => r.text()),
-      fetch('./style.css?t='  + Date.now()).then(r => r.text()),
-    ]);
+    const contentB64 = btoa(unescape(encodeURIComponent(dataJs)));
 
-    el.textContent = '⏳ ZIPを作成中...';
-    const zip = new JSZip();
-    zip.file('index.html', indexHtml);
-    zip.file('admin.html', adminHtml);
-    zip.file('script.js',  scriptJs);
-    zip.file('style.css',  styleCSS);
-    zip.file('data.js',    dataJs);
-    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    el.textContent = '⏳ GitHubの現在のファイルを確認中...';
+    const apiBase = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/data.js';
+    const headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' };
 
-    el.textContent = '⏳ Netlifyにアップロード中...';
-    const deployRes = await fetch('https://api.netlify.com/api/v1/sites/' + NETLIFY_SITE + '/deploys', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/zip' },
-      body: zipBlob
-    });
-
-    if (deployRes.status === 401) {
-      localStorage.removeItem('netlify_pat');
+    const getRes = await fetch(apiBase, { headers });
+    if (getRes.status === 401) {
+      localStorage.removeItem('github_pat');
       alert('トークンが無効です。再設定してください。');
       openGHModal();
       return;
     }
-    if (!deployRes.ok) {
-      const errData = await deployRes.json().catch(() => ({}));
-      throw new Error(errData.message || 'HTTP ' + deployRes.status);
+    let sha = null;
+    if (getRes.ok) {
+      const getJson = await getRes.json();
+      sha = getJson.sha;
+    } else if (getRes.status !== 404) {
+      throw new Error('GitHub取得エラー: HTTP ' + getRes.status);
+    }
+
+    el.textContent = '⏳ GitHubにアップロード中...';
+    const putBody = {
+      message: '管理画面から更新 ' + new Date().toLocaleString('ja-JP'),
+      content: contentB64,
+    };
+    if (sha) putBody.sha = sha;
+    const putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(putBody)
+    });
+
+    if (!putRes.ok) {
+      const errData = await putRes.json().catch(() => ({}));
+      throw new Error(errData.message || 'HTTP ' + putRes.status);
     }
 
     el.textContent = '✅ 公開しました！1〜2分後にHPへ反映されます';
@@ -1822,7 +1827,27 @@ function collectVoices() {
 // 初期化
 // ================================================================
 
-window.addEventListener('DOMContentLoaded', () => {
+async function autoLoadFromServer() {
+  if (localStorage.getItem('hp_data')) return;
+  try {
+    const statusEl = document.getElementById('saveStatus');
+    if (statusEl) { statusEl.textContent = '⏳ サーバーから最新データを読み込み中...'; statusEl.className = 'save-status'; }
+    const res = await fetch('./data.js?t=' + Date.now());
+    if (!res.ok) return;
+    const code = await res.text();
+    const fn = new Function(
+      code +
+      '\nreturn { NEWS:typeof NEWS!=="undefined"?NEWS:[], THEME:typeof THEME!=="undefined"?THEME:{}, HERO:typeof HERO!=="undefined"?HERO:{}, CHIEF:typeof CHIEF!=="undefined"?CHIEF:{}, STAFF:typeof STAFF!=="undefined"?STAFF:[], STAFF_NONREGULAR:typeof STAFF_NONREGULAR!=="undefined"?STAFF_NONREGULAR:[], EVENTS:typeof EVENTS!=="undefined"?EVENTS:[], CONTACT:typeof CONTACT!=="undefined"?CONTACT:{}, RESEARCH:typeof RESEARCH!=="undefined"?RESEARCH:[], PUBLICATIONS:typeof PUBLICATIONS!=="undefined"?PUBLICATIONS:[], TRAINING:typeof TRAINING!=="undefined"?TRAINING:[], VOICES:typeof VOICES!=="undefined"?VOICES:[] };'
+    );
+    const v = fn();
+    const data = { theme:v.THEME, hero:v.HERO, news:v.NEWS, chief:v.CHIEF, staff:v.STAFF, staffNonregular:v.STAFF_NONREGULAR, events:v.EVENTS, contact:v.CONTACT, research:v.RESEARCH, publications:v.PUBLICATIONS, training:v.TRAINING, voices:v.VOICES, savedAt:new Date().toISOString() };
+    localStorage.setItem('hp_data', JSON.stringify(data));
+    localStorage.setItem('hp_v', Date.now());
+    if (statusEl) { statusEl.textContent = '✅ サーバーから最新データを読み込みました'; statusEl.className = 'save-status ok'; setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'save-status'; }, 5000); }
+  } catch(e) { /* 失敗しても続行 */ }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
 
   // ---- origin チェック ----
   const isFile = location.protocol === 'file:';
@@ -1844,6 +1869,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const origin = location.origin;
     if (hpLink) hpLink.href = origin + '/index.html';
   }
+
+  if (!isFile) await autoLoadFromServer();
 
   const sv = loadSaved();
 
