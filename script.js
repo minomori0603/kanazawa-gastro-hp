@@ -515,33 +515,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn     = form.querySelector('button[type="submit"]');
     const email   = (contact && contact.formEmail && contact.formEmail.trim()) || '';
 
-    // メアドが未設定の場合は案内を表示
-    if (!email) {
-      toast.textContent = '⚠️ 送信先メールアドレスが設定されていません（管理画面で設定してください）';
-      toast.classList.add('show', 'toast-warn');
-      setTimeout(() => { toast.classList.remove('show','toast-warn'); toast.textContent = 'お問い合わせを送信しました。'; }, 5000);
-      return;
-    }
-
     // ボタンを送信中状態に
     const origText = btn.textContent;
     btn.textContent = '送信中…';
     btn.disabled = true;
 
     try {
-      const res = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(email), {
+      const res = await fetch('/', {
         method:  'POST',
-        headers: { 'Accept': 'application/json' },
-        body:    new FormData(form),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    new URLSearchParams(new FormData(form)).toString(),
       });
-      const json = await res.json().catch(() => ({}));
-      if (res.ok && json.success !== 'false') {
+      if (res.ok) {
         toast.textContent = '✅ お問い合わせを送信しました。';
         toast.classList.add('show');
         form.reset();
         setTimeout(() => toast.classList.remove('show'), 4000);
       } else {
-        throw new Error(json.message || '送信に失敗しました');
+        throw new Error('HTTP ' + res.status);
       }
     } catch (err) {
       toast.textContent = '❌ 送信できませんでした。お電話でお問い合わせください。';
