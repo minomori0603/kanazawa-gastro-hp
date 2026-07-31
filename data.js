@@ -1,4 +1,4 @@
-/* 管理画面から生成: 2026/7/31 10:29:18 */
+/* 管理画面から生成: 2026/7/31 10:30:19 */
 
 const THEME = {
   navy:"#003478", navyMid:"#004fa3", gold:"#b8832a", goldLight:"#d4a84b",
@@ -34,7 +34,7 @@ const STAFF = [
   { name:"寺島 健志", rank:"准教授（併任）", specialty:"内科学・消化器病学・臨床腫瘍学", photo:"", showCard:false },
   { name:"山田 真也", rank:"助教", specialty:"消化器癌内視鏡治療・消化器病一般", photo:"", showCard:true },
   { name:"中河 秀俊", rank:"講師", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
-  { name:"久保田 龍一", rank:"助教", specialty:"肝臓病・消化器病一般", photo:"", showCard:false },
+  { name:"久保田 龍一", rank:"助教", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"津村 崇", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"村上 慧", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"秦 義之", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
