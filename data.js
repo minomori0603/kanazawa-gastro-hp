@@ -1,4 +1,4 @@
-/* 管理画面から生成: 2026/7/31 10:30:19 */
+/* 管理画面から生成: 2026/7/31 10:34:10 */
 
 const THEME = {
   navy:"#003478", navyMid:"#004fa3", gold:"#b8832a", goldLight:"#d4a84b",
@@ -69,7 +69,7 @@ const EVENTS = [
 
 const CONTACT = {
   dept:"金沢医科大学病院 消化器内科（肝胆膵・消化管）", address:"〒920-0293 石川県河北郡内灘町大学1-1", tel:"076-286-3511", ext:"25610 / 25611",
-  formEmail:"", mapUrl:"",
+  formEmail:"gastent@kanazawa-med.ac.jp", mapUrl:"",
   social:{ x:"", instagram:"", facebook:"" },
   reception:{ shinshin:"平日・土曜 8:30〜12:00", saishin:"平日 13:00〜16:00　/　土曜 8:30〜12:00", kyushin:"土曜午後・日曜・祝日・年末年始・大学開学記念日（6/1）" },
 };
