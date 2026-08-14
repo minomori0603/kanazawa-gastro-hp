@@ -1,4 +1,4 @@
-/* 管理画面から生成: 2026/8/14 11:53:00 */
+/* 管理画面から生成: 2026/8/14 15:52:24 */
 
 const THEME = {
   navy:"#003478", navyMid:"#004fa3", gold:"#b8832a", goldLight:"#d4a84b",
@@ -26,15 +26,15 @@ const CHIEF = {
 };
 
 const STAFF = [
-  { name:"水腰 英四郎", rank:"教授", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
-  { name:"北方 秀一", rank:"臨床教授", specialty:"消化器癌内視鏡治療", photo:"", showCard:true },
+  { name:"水腰 英四郎", rank:"主任教授・消化器内科長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
+  { name:"北方 秀一", rank:"臨床教授・内視鏡センター長", specialty:"消化器癌内視鏡治療", photo:"", showCard:true },
   { name:"島崎 猛夫", rank:"特任教授（併任）", specialty:"肝胆膵病・消化器病一般", photo:"", showCard:false },
-  { name:"尾﨑 一晶", rank:"臨床准教授", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
+  { name:"尾﨑 一晶", rank:"臨床准教授・教育医長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"齊藤 隆", rank:"臨床准教授・医局長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"寺島 健志", rank:"准教授（併任）", specialty:"内科学・消化器病学・臨床腫瘍学", photo:"", showCard:false },
-  { name:"中河 秀俊", rank:"講師", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
-  { name:"山田 真也", rank:"助教", specialty:"消化器癌内視鏡治療・消化器病一般", photo:"", showCard:true },
-  { name:"久保田 龍一", rank:"助教", specialty:"肝臓病・消化器病一般", photo:"", showCard:false },
+  { name:"山田 真也", rank:"助教・外来医長", specialty:"消化器癌内視鏡治療・消化器病一般", photo:"", showCard:true },
+  { name:"中河 秀俊", rank:"講師・研究医長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
+  { name:"久保田 龍一", rank:"助教・病棟医長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"津村 崇", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"村上 慧", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"秦 義之", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
@@ -85,7 +85,7 @@ const PUBLICATIONS = [
   { year:"2026", title:"消化器内視鏡を用いた早期消化管癌の診断・治療成績に関する多施設共同研究", meta:"日本消化器内視鏡学会雑誌, 2026" },
   { year:"2025", title:"B型肝炎ウイルス核酸アナログ製剤の長期投与成績と耐性変異に関する検討", meta:"肝臓, 2025" },
   { year:"2025", title:"炎症性腸疾患における生物学的製剤の治療効果と安全性：単施設リアルワールドデータ", meta:"腸内細菌学雑誌 / IBD研究, 2025" },
-  { year:"2024", title:"非アルコール性脂肪性肝炎（NASH）における肝線維化進展因子の解析", meta:"消化器病学, 2024" },
+  { year:"2024", title:"代謝異常関連脂肪性肝疾患（MASLD）における肝線維化進展因子の解析", meta:"消化器病学, 2024" },
 ];
 
 const TRAINING = [
