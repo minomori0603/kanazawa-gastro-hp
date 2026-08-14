@@ -1,4 +1,4 @@
-/* 管理画面から生成: 2026/7/31 11:13:16 */
+/* 管理画面から生成: 2026/8/14 11:53:00 */
 
 const THEME = {
   navy:"#003478", navyMid:"#004fa3", gold:"#b8832a", goldLight:"#d4a84b",
@@ -32,9 +32,9 @@ const STAFF = [
   { name:"尾﨑 一晶", rank:"臨床准教授", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"齊藤 隆", rank:"臨床准教授・医局長", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
   { name:"寺島 健志", rank:"准教授（併任）", specialty:"内科学・消化器病学・臨床腫瘍学", photo:"", showCard:false },
-  { name:"山田 真也", rank:"助教", specialty:"消化器癌内視鏡治療・消化器病一般", photo:"", showCard:true },
   { name:"中河 秀俊", rank:"講師", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
-  { name:"久保田 龍一", rank:"助教", specialty:"肝臓病・消化器病一般", photo:"", showCard:true },
+  { name:"山田 真也", rank:"助教", specialty:"消化器癌内視鏡治療・消化器病一般", photo:"", showCard:true },
+  { name:"久保田 龍一", rank:"助教", specialty:"肝臓病・消化器病一般", photo:"", showCard:false },
   { name:"津村 崇", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"村上 慧", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
   { name:"秦 義之", rank:"助教", specialty:"消化器病一般", photo:"", showCard:false },
@@ -68,8 +68,8 @@ const EVENTS = [
 ];
 
 const CONTACT = {
-  dept:"金沢医科大学 消化器内科学", address:"〒920-0293 石川県河北郡内灘町大学1-1", tel:"076-286-2211", ext:"25610 / 25611",
-  formEmail:"gastent@kanazawa-med.ac.jp", mapUrl:"",
+  dept:"金沢医科大学病院 消化器内科（肝胆膵・消化管）", address:"〒920-0293 石川県河北郡内灘町大学1-1", tel:"076-286-2211", ext:"25610 / 25611",
+  formEmail:"", mapUrl:"",
   social:{ x:"", instagram:"", facebook:"" },
   reception:{ shinshin:"平日・土曜 8:30〜12:00", saishin:"平日 13:00〜16:00　/　土曜 8:30〜12:00", kyushin:"土曜午後・日曜・祝日・年末年始・大学開学記念日（6/1）" },
 };
@@ -93,7 +93,7 @@ const TRAINING = [
   { tag:"2〜3年目", heading:"専門研修", desc:"ERCP・EUSなどの高度手技修得、専門外来の担当、学会発表デビュー。各専門領域（肝・IBD・胆膵・内視鏡）の集中研修。" },
   { tag:"4年目〜", heading:"高度専門・研究", desc:"消化器内科専門医資格取得、研究活動の本格化、後輩指導。希望者は大学院進学・海外留学も可能です。" },
 ];
- 
+
 const VOICES = [
   { name:"○○ ○○ 先生", role:"入局 / 消化器内科専門医", comment:"「入局後から積極的に手技の機会を与えてもらえます。上級医のサポートのもと着実にスキルアップできる環境が整っており、学会発表や論文執筆のサポートも充実しています。」" },
   { name:"○○ ○○ 先生", role:"入局 / 後期研修医", comment:"「チームの雰囲気がよく、質問しやすい環境で安心して学べています。研究にも挑戦でき、毎日充実しています。まずは見学にいらしてください！」" },
